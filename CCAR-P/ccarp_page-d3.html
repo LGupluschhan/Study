@@ -23,18 +23,7 @@
   --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #0f141c; --panel: #161d28; --fg: #e3e8ef; --muted: #96a3b5; --line: #334155; --grid: #1e2734;
-    --accent: #7ea6ff; --accent-soft: #1c2a47; --warm: #f0a35e; --warm-soft: #3a2816;
-    --ok: #6cc892; --ok-soft: #173526; --node: #1b2431; color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #0f141c; --panel: #161d28; --fg: #e3e8ef; --muted: #96a3b5; --line: #334155; --grid: #1e2734;
-  --accent: #7ea6ff; --accent-soft: #1c2a47; --warm: #f0a35e; --warm-soft: #3a2816;
-  --ok: #6cc892; --ok-soft: #173526; --node: #1b2431; color-scheme: dark;
-}
+:root { color-scheme: light; }
 
 * { box-sizing: border-box; }
 body {
@@ -197,13 +186,16 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 <text class="ts" x="43" y="89" text-anchor="middle">권한·범위</text>
 <path class="e" d="M79 81 C96 81 96 29 109 29" marker-end="url(#ar)"/>
 <rect class="n-w" x="113" y="10" width="104" height="38" rx="6"/>
-<text class="t" x="165" y="29" text-anchor="middle">공격 면적 ↑</text>
+<text class="t" x="165" y="24" text-anchor="middle">공격 면적 ↑</text>
+<text class="ts" x="165" y="40" text-anchor="middle">(Attack surface ↑)</text>
 <path class="e" d="M79 81 C96 81 96 81 109 81" marker-end="url(#ar)"/>
 <rect class="n-w" x="113" y="62" width="104" height="38" rx="6"/>
-<text class="t" x="165" y="81" text-anchor="middle">선택 정확도 ↓</text>
+<text class="t" x="165" y="76" text-anchor="middle">선택 정확도 ↓</text>
+<text class="ts" x="165" y="92" text-anchor="middle">(Accuracy ↓)</text>
 <path class="e" d="M79 81 C96 81 96 133 109 133" marker-end="url(#ar)"/>
 <rect class="n-w" x="113" y="114" width="104" height="38" rx="6"/>
-<text class="t" x="165" y="133" text-anchor="middle">피해 범위 ↑</text>
+<text class="t" x="165" y="128" text-anchor="middle">피해 범위 ↑</text>
+<text class="ts" x="165" y="144" text-anchor="middle">(Blast radius ↑)</text>
 </svg>
 </div>
 <div class="chips"><span class="chip">겹치는 도구 정의 사이에서 헷갈림</span><span class="chip">도구 정의마다 컨텍스트 토큰 소모</span><span class="chip">프롬프트 인젝션 한 번의 파급력 증가</span></div>

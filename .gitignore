@@ -1,0 +1,25 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Editors / IDE
+.vscode/
+.idea/
+*.swp
+*~
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Claude Code 로컬 설정 (개인용)
+.claude/settings.local.json
+
+# 임시 파일 / 다운로드
+tmp/
+*.log
+*.tmp

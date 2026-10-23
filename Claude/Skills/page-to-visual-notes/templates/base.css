@@ -17,18 +17,7 @@
   --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #0f141c; --panel: #161d28; --fg: #e3e8ef; --muted: #96a3b5; --line: #334155; --grid: #1e2734;
-    --accent: #7ea6ff; --accent-soft: #1c2a47; --warm: #f0a35e; --warm-soft: #3a2816;
-    --ok: #6cc892; --ok-soft: #173526; --node: #1b2431; color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #0f141c; --panel: #161d28; --fg: #e3e8ef; --muted: #96a3b5; --line: #334155; --grid: #1e2734;
-  --accent: #7ea6ff; --accent-soft: #1c2a47; --warm: #f0a35e; --warm-soft: #3a2816;
-  --ok: #6cc892; --ok-soft: #173526; --node: #1b2431; color-scheme: dark;
-}
+:root { color-scheme: light; }
 
 * { box-sizing: border-box; }
 body {

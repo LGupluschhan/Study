@@ -23,18 +23,7 @@
   --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #0f141c; --panel: #161d28; --fg: #e3e8ef; --muted: #96a3b5; --line: #334155; --grid: #1e2734;
-    --accent: #7ea6ff; --accent-soft: #1c2a47; --warm: #f0a35e; --warm-soft: #3a2816;
-    --ok: #6cc892; --ok-soft: #173526; --node: #1b2431; color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #0f141c; --panel: #161d28; --fg: #e3e8ef; --muted: #96a3b5; --line: #334155; --grid: #1e2734;
-  --accent: #7ea6ff; --accent-soft: #1c2a47; --warm: #f0a35e; --warm-soft: #3a2816;
-  --ok: #6cc892; --ok-soft: #173526; --node: #1b2431; color-scheme: dark;
-}
+:root { color-scheme: light; }
 
 * { box-sizing: border-box; }
 body {
@@ -101,7 +90,7 @@ svg text { dominant-baseline: middle; }
 ul.plain { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 6px; }
 .tasks { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
 .task { border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; background: var(--panel); font-size: 15px; display: flex; gap: 10px; align-items: flex-start; }
-.task b { font-family: var(--font-mono); color: var(--accent); font-size: 13px; padding-top: 2px; }
+.task b { font-family: var(--font-mono); color: var(--accent); font-size: 13px; padding-top: 2px; white-space: nowrap; }
 
 /* 1.1 work backward */
 .backward { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; }
@@ -261,9 +250,9 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 <path class="e" d="M254 44 H268" marker-end="url(#ar)"/>
 <rect class="n-a" x="272" y="30" width="73" height="28" rx="6"/>
 <text class="t" x="309" y="44" text-anchor="middle">출력 형식</text>
-<text class="tm" x="134" y="72" text-anchor="middle">앞쪽 배치 · 캐시</text>
-<text class="tm" x="221" y="72" text-anchor="middle">거절·에스컬레이션</text>
-<text class="tm" x="309" y="72" text-anchor="middle">JSON 스키마 등</text>
+<text class="tm" x="134" y="72" text-anchor="middle">정적 · 캐시</text>
+<text class="tm" x="221" y="72" text-anchor="middle">거절 · 금지</text>
+<text class="tm" x="309" y="72" text-anchor="middle">스키마</text>
 </svg>
 </div>
 <div class="patterns">
