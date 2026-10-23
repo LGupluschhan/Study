@@ -1,0 +1,165 @@
+{
+  "title": "솔루션 설계와 아키텍처",
+  "eyebrow": "CCARP · Part II · Domain 1",
+  "h1": "솔루션 설계와 아키텍처",
+  "h1_en": "Solution Design &amp; Architecture",
+  "lead": "모호한 비즈니스 문제를 구체적이고 근거 있는 시스템 설계로 바꾸고, 요구사항을 실제로 충족하는 <strong>가장 단순한</strong> 아키텍처를 고르는 능력.",
+  "weight": {"pct": 17, "label": "시험 비중 17%"},
+  "sections": [
+    {
+      "title": "공식 출제 항목", "en": "Official task statements",
+      "blocks": [
+        {"t": "tasks", "items": [
+          ["1.1", "비즈니스 문제를 Claude 기반 AI 솔루션으로 변환"],
+          ["1.2", "엔드투엔드 아키텍처 설계 (입력 → 처리 → 출력 → 피드백 루프)"],
+          ["1.3", "적절한 아키텍처 패턴 선택 (워크플로, 에이전트, 증강 LLM)"],
+          ["1.4", "멀티 에이전트 시스템과 오케스트레이션 전략 설계"],
+          ["1.5", "복잡한 문제 해결을 위한 분해 기법 적용"],
+          ["1.6", "비즈니스 가치 축에 맞추기 (효율, 혁신, 생산성, 비용, 성능 SLA)"]
+        ]}
+      ]
+    },
+    {
+      "no": "1.1", "title": "비즈니스 문제를 솔루션으로", "en": "Translating business problems",
+      "blocks": [
+        {"t": "p", "html": "모든 아키텍처는 기술 선택이 아니라 <strong>문제 정의</strong>에서 시작합니다. 잘 만든 프롬프트 하나면 될 일에 에이전트를 쓰거나, 컨텍스트 엔지니어링으로 될 일에 파인튜닝을 쓰는 것이 흔한 실수입니다. 원하는 결과에서 거꾸로 따라가며 질문에 답한 뒤에야 패턴을 고릅니다."},
+        {"t": "fig", "cap": "도면 1 · 결과에서 거꾸로 설계하기", "items": [
+          {"t": "backward", "left": "← 결과에서 출발해 거꾸로 질문", "right": "마지막에 패턴 선택", "steps": [
+            {"k": "출발점 · 결과", "role": "goal", "html": "사람이 지금 내리는 결정이나 만드는 산출물은? '좋은 결과'의 기준은?"},
+            {"k": "필요한 정보", "html": "필요한 정보는 무엇이고 지금 어디에 있나? (문서, DB, API, 암묵지)"},
+            {"k": "오류 허용도", "html": "허용 가능한 오류율은? 오류 한 번의 비용은?"},
+            {"k": "물량 · 지연", "html": "처리량과 응답 시간 요구사항은?"},
+            {"k": "그 다음에야", "role": "pick", "html": "패턴 선택"}
+          ]},
+          {"t": "spectra", "items": [
+            {"title": "오류의 비용 → 감당할 수 있는 위험", "left": "초안 작성 보조<br>위험 감당 큼", "right": "대출 자동 승인<br>위험 감당 작음"},
+            {"title": "처리량 → 파이프라인이 감당할 수 있는 무게", "left": "하루 10건<br>느리고 비싼 파이프라인도 OK", "right": "하루 10,000건<br>그런 파이프라인은 불가"}
+          ]}
+        ]},
+        {"t": "quote", "html": "\"가능한 가장 단순한 해법을 찾고, 필요할 때만 복잡도를 높여라.\"", "small": "Anthropic 에이전트 설계 가이드. 에이전트 시스템은 지연과 비용을 내주고 유연성을 얻습니다."}
+      ]
+    },
+    {
+      "no": "1.2", "title": "엔드투엔드 아키텍처", "en": "input → processing → output → feedback",
+      "blocks": [
+        {"t": "p", "html": "모든 프로덕션 Claude 시스템은 네 단계로 설명할 수 있습니다."},
+        {"t": "fig", "cap": "도면 2 · 4단계 루프", "items": [
+          {"t": "diagram", "kind": "stages", "aria": "입력, 처리, 출력이 이어지고 피드백이 처리로 돌아오는 도식",
+           "stages": [
+             {"title": "입력 Input", "lines": ["사용자 메시지 · 웹훅 · 배치 · 업로드", "Claude 전에: 정규화 · PII 처리"]},
+             {"title": "처리 Processing", "kind": "a", "lines": ["모델 호출 · 검색 · 도구/에이전트", "생성 전후 가드레일 · 안전 점검"]},
+             {"title": "출력 Output", "lines": ["화면 표시 · DB 기록 · 후속 동작", "생성과 실행 사이 사람 승인 게이트?"]}
+           ],
+           "feedback": {"title": "피드백 루프 Feedback", "to": 1, "label": "프롬프트 · 검색 · 평가 개선", "note": "평점 · 수정량 · 평가 로그 · 에스컬레이션 기록"}}
+        ]},
+        {"t": "callout", "tone": "warm", "eyebrow": "출력에서 끝나면 불완전", "items": [
+          {"t": "p", "html": "피드백 장치 없이 '출력'에서 멈춘 설계는 미완성입니다. Domain 4와 6은 피드백 루프가 <strong>첫날부터</strong> 계측된다고 가정합니다."}
+        ]}
+      ]
+    },
+    {
+      "no": "1.3", "title": "아키텍처 패턴", "en": "augmented LLM · workflow · agent",
+      "blocks": [
+        {"t": "fig", "cap": "도면 3 · 복잡도 사다리", "items": [
+          {"t": "diagram", "kind": "ladder", "aria": "증강 LLM, 워크플로, 에이전트 순으로 올라가는 계단",
+           "axis": "복잡도 · 비용 · 지연 ↑ / 유연성 ↑", "climb": "부족할 때만",
+           "steps": [
+             {"title": "증강 LLM", "kind": "o", "lines": ["단일 호출 + 검색 · 도구 · 메모리", "대부분의 프로덕션은 여기서 충분"]},
+             {"title": "워크플로", "kind": "a", "lines": ["미리 정한 코드 경로", "코드가 흐름을 결정"]},
+             {"title": "에이전트", "kind": "w", "lines": ["모델이 흐름을 결정", "단계 수를 미리 알 수 없을 때"]}
+           ]}
+        ]},
+        {"t": "h3", "text": "워크플로 패턴", "en": "Workflow patterns"},
+        {"t": "cards", "items": [
+          {"title": "프롬프트 체이닝", "en": "Prompt chaining",
+           "diagram": {"kind": "chain", "aria": "입력, LLM 1, 게이트, LLM 2, 출력 직렬 연결",
+                       "nodes": ["입력", {"label": "LLM 1", "kind": "a"}, {"label": "GATE", "kind": "gate", "note": "점검 실패 → 중단", "fail": true}, {"label": "LLM 2", "kind": "a"}, "출력"]},
+           "html": "고정된 순서의 LLM 호출. 단계 사이에 코드 '게이트' 점검을 둘 수 있습니다.",
+           "fit": {"label": "적합", "html": "개요 작성 → 기준 검증 → 전체 문서 작성"}},
+          {"title": "라우팅", "en": "Routing",
+           "diagram": {"kind": "fanout", "aria": "분류 후 모델별로 보냄", "head": ["입력", {"label": "분류", "kind": "o"}],
+                       "branches": [{"label": "Haiku · 단순 FAQ", "kind": "a"}, {"label": "전용 프롬프트 B", "kind": "a"}, {"label": "Sonnet/Opus · 복잡", "kind": "a"}]},
+           "html": "입력을 먼저 분류한 뒤 특화된 프롬프트나 모델로 보냅니다."},
+          {"title": "병렬화 · 투표", "en": "Parallelization (voting)",
+           "diagram": {"kind": "fanout", "aria": "같은 작업 3회 후 투표", "head": ["입력"],
+                       "branches": [{"label": "같은 작업 #1", "kind": "a"}, {"label": "같은 작업 #2", "kind": "a"}, {"label": "같은 작업 #3", "kind": "a"}],
+                       "tail": [{"label": "투표", "kind": "o", "note": "다수결/임계값"}, "출력"]},
+           "html": "같은 작업을 여러 번 돌려 다수결이나 임계값으로 합칩니다."},
+          {"title": "오케스트레이터-워커", "en": "Orchestrator-workers",
+           "diagram": {"kind": "fanout", "aria": "실행 중 워커 수 결정", "head": [{"label": "오케스트레이터", "kind": "w"}],
+                       "branches": [{"label": "워커 1", "kind": "dash"}, {"label": "워커 2", "kind": "dash"}, {"label": "워커 n?", "kind": "dash", "dash": true}],
+                       "tail": [{"label": "결과 종합", "kind": "w"}]},
+           "html": "중앙 LLM이 작업을 <strong>실행 중에</strong> 나눠 위임하고 종합합니다."},
+          {"title": "평가자-최적화자", "en": "Evaluator-optimizer",
+           "diagram": {"kind": "cycle", "aria": "생성과 평가의 반복 루프", "a": {"label": "생성 LLM", "kind": "a"}, "b": {"label": "평가 LLM", "kind": "o"},
+                       "forward": "결과물", "back": "비평 · 재시도", "exit": "기준 충족 → 출력"},
+           "html": "한 호출이 생성하고 다른 호출이 비평합니다. 기준 충족까지 반복합니다."}
+        ]},
+        {"t": "h3", "text": "에이전트", "en": "Agents"},
+        {"t": "fig", "cap": "도면 4 · 에이전트 루프", "items": [
+          {"t": "diagram", "kind": "agent", "aria": "에이전트가 환경과 행동·피드백을 주고받다가 중단 조건에서 멈춤",
+           "actor": "사람 · 목표", "agent": {"label": "LLM (에이전트)", "sub": "계획 · 다음 단계 결정"}, "env": {"label": "환경", "sub": "도구 · 코드 실행"},
+           "act": "행동 (도구 호출)", "feedback": "피드백: 도구 결과, 실행 출력", "stop": "중단: 완료 · 최대 반복 · 사람 체크포인트"},
+          {"t": "chips", "items": ["지연 증가", "토큰 비용 증가", "여러 턴에 걸친 오류 누적"]}
+        ]},
+        {"t": "callout", "eyebrow": "시험 휴리스틱 · 워크플로 vs 에이전트", "items": [
+          {"t": "vs", "items": [
+            {"tone": "ok", "tag": "→ 워크플로", "html": "코드를 쓰기 전에 의사결정 트리를 그릴 수 있다."},
+            {"tone": "warm", "tag": "→ 에이전트", "html": "단계의 수와 성격이 진행 중 발견에 따라 달라진다."}
+          ]},
+          {"t": "p", "html": "그럴듯함은 함정이지 설계 목표가 아닙니다."}
+        ]}
+      ]
+    },
+    {
+      "no": "1.4", "title": "멀티 에이전트", "en": "Multi-agent systems",
+      "blocks": [
+        {"t": "cards", "items": [
+          {"title": "오케스트레이터 + 서브에이전트",
+           "diagram": {"kind": "hub", "aria": "리드가 서브에이전트 셋에 분배", "lead": {"title": "리드 에이전트", "sub": "분해 · 배분 · 종합"}, "edge_label": "간결한 handoff",
+                       "children": [{"title": "서브에이전트 A", "lines": ["자체 도구", "자체 컨텍스트"]}, {"title": "서브에이전트 B", "lines": ["자체 도구", "자체 컨텍스트"]}, {"title": "서브에이전트 C", "lines": ["자체 도구", "자체 컨텍스트"]}]},
+           "fit": {"label": "대가", "html": "조율 오버헤드"}},
+          {"title": "P2P · 에이전트 간 통신",
+           "diagram": {"kind": "peers", "aria": "조직 경계를 넘어 프로토콜로 통신", "groups": [{"boundary": "조직 / 팀 A", "agent": "에이전트 A"}, {"boundary": "조직 / 팀 B", "agent": "에이전트 B"}], "label": ["정의된", "프로토콜"]},
+           "fit": {"label": "적합", "html": "신뢰·조직 경계를 넘을 때"}}
+        ]}
+      ]
+    },
+    {
+      "no": "1.5", "title": "분해 기법", "en": "Decomposition techniques",
+      "blocks": [
+        {"t": "cards", "items": [
+          {"title": "신뢰도 기반 에스컬레이션", "en": "Confidence-gated escalation",
+           "diagram": {"kind": "fanout", "aria": "저렴한 경로 먼저, 낮은 확신이면 상위로", "head": [{"label": "작은 모델", "kind": "a"}, {"label": "확신?", "kind": "gate"}],
+                       "branches": [{"label": "높음 → 완료", "kind": "o"}, {"label": "큰 모델 · 사람 검토", "kind": "w", "edge": "w"}]},
+           "html": "빠른 경로를 먼저, 확신이 낮거나 위험이 크면 상위로 올립니다."},
+          {"title": "체크포인트", "en": "Checkpointing",
+           "diagram": {"kind": "chain", "aria": "LLM 사이 코드 게이트", "caption": "결정적인 코드 게이트",
+                       "nodes": [{"label": "LLM", "kind": "a"}, {"label": "스키마 검증", "kind": "o", "note": "여기서 차단", "fail": true}, {"label": "LLM", "kind": "a"}, {"label": "규칙 검사", "kind": "o"}]},
+           "html": "LLM 단계 사이에 코드 검증 게이트를 넣어 오류 전파를 막습니다."}
+        ]}
+      ]
+    },
+    {
+      "no": "1.6", "title": "비즈니스 가치 축", "en": "Business value pillars",
+      "blocks": [
+        {"t": "pillars", "items": [
+          {"title": "효율", "en": "Efficiency", "html": "같은 일을 더 적은 시간·비용으로", "ev": "평균 처리 시간 감소"},
+          {"title": "비용", "en": "Cost", "html": "추론·인프라·인력 직접 비용", "ev": "요청당 비용, TCO"},
+          {"title": "성능 SLA", "en": "Performance SLAs", "html": "지연·가용성·정확도 약속", "ev": "P95 응답 시간, 가동률"}
+        ]},
+        {"t": "fig", "cap": "도면 5 · 최적화하는 축과 내주는 축", "items": [
+          {"t": "split", "aria": "90%는 Haiku 라우팅, 10%는 큰 모델", "main": {"label": "90% · Claude Haiku + 라우팅 · 1초 이내"}, "rest": {"label": "10%"},
+           "legend": ["<strong class=\"c-accent\">최적화:</strong> 성능 SLA", "<strong class=\"c-warm\">감수:</strong> 어려운 10%의 정확도 손실"]}
+        ]}
+      ]
+    },
+    {
+      "title": "핵심 정리", "en": "Key takeaways",
+      "blocks": [
+        {"t": "takeaways", "items": ["비즈니스 문제에서 시작한다.", "복잡도 사다리에서 어디서 멈출지 안다.", "피드백이 빠진 설계는 미완성이다."]}
+      ]
+    }
+  ],
+  "source": {"url": "https://amitj.me/claude/course/ccarp/2/#page-d1", "label": "CCARP 코스 · Domain 1"}
+}

@@ -1,0 +1,314 @@
+<title>개발자 생산성·운영 지원</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: 설계 도면(blueprint) 노트 — 좁은 본문 열 + 모눈 도면 패널. 섹션 번호는 원문 번호 그대로.
+   build_page.py가 이 파일을 <style>에 그대로 넣는다. 색은 모두 토큰으로만 쓴다(라이트/다크 자동). */
+:root {
+  --bg: #f5f7fa;
+  --panel: #ffffff;
+  --fg: #18212e;
+  --muted: #5a6779;
+  --line: #c9d2de;
+  --grid: #e6ebf2;
+  --accent: #2456c9;
+  --accent-soft: #e4ecfb;
+  --warm: #b8621b;
+  --warm-soft: #fbeedf;
+  --ok: #2f7d4f;
+  --ok-soft: #e2f2e8;
+  --node: #ffffff;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f141c; --panel: #161d28; --fg: #e3e8ef; --muted: #96a3b5; --line: #334155; --grid: #1e2734;
+    --accent: #7ea6ff; --accent-soft: #1c2a47; --warm: #f0a35e; --warm-soft: #3a2816;
+    --ok: #6cc892; --ok-soft: #173526; --node: #1b2431; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f141c; --panel: #161d28; --fg: #e3e8ef; --muted: #96a3b5; --line: #334155; --grid: #1e2734;
+  --accent: #7ea6ff; --accent-soft: #1c2a47; --warm: #f0a35e; --warm-soft: #3a2816;
+  --ok: #6cc892; --ok-soft: #173526; --node: #1b2431; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.75;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 80px;
+  word-break: keep-all; overflow-wrap: anywhere;
+}
+.wrap { max-width: 920px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+.prose { max-width: 680px; }
+h1, h2, h3 { text-wrap: balance; line-height: 1.35; margin: 0; }
+h1 { font-size: clamp(28px, 5vw, 40px); font-weight: 700; }
+h2 { font-size: 24px; font-weight: 700; display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+h2 .no { font-family: var(--font-mono); font-size: 15px; color: var(--accent); font-weight: 600; }
+h3 { font-size: 18px; font-weight: 700; }
+p { margin: 0; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.en { font-family: var(--font-mono); font-size: .78em; color: var(--muted); font-weight: 400; }
+section { display: flex; flex-direction: column; gap: 18px; }
+.lead { font-size: 18px; color: var(--muted); }
+
+/* header */
+header { display: flex; flex-direction: column; gap: 14px; }
+.weight { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.weight-bar { width: 220px; max-width: 100%; height: 10px; border-radius: 5px; background: var(--grid); overflow: hidden; }
+.weight-bar span { display: block; height: 100%; background: var(--accent); }
+.weight small { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+
+/* blueprint panel */
+.fig {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+  padding: 20px; display: flex; flex-direction: column; gap: 14px;
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 24px 24px; background-position: -1px -1px;
+}
+.fig-cap { font-family: var(--font-mono); font-size: 12px; color: var(--muted); letter-spacing: .04em; }
+.scroll { overflow-x: auto; }
+svg.d { display: block; width: 100%; height: auto; min-width: 560px; }
+svg.m { display: block; width: 100%; height: auto; }
+
+/* svg styling */
+.n { fill: var(--node); stroke: var(--line); stroke-width: 1.5; }
+.n-a { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+.n-w { fill: var(--warm-soft); stroke: var(--warm); stroke-width: 1.5; }
+.n-o { fill: var(--ok-soft); stroke: var(--ok); stroke-width: 1.5; }
+.n-dash { fill: var(--node); stroke: var(--muted); stroke-width: 1.3; stroke-dasharray: 4 3; }
+.bound { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 6 4; }
+.e { fill: none; stroke: var(--muted); stroke-width: 1.6; }
+.e-a { fill: none; stroke: var(--accent); stroke-width: 1.8; }
+.e-w { fill: none; stroke: var(--warm); stroke-width: 1.8; }
+.e-dash { stroke-dasharray: 5 4; }
+.ah { fill: var(--muted); } .ah-a { fill: var(--accent); } .ah-w { fill: var(--warm); }
+.t { fill: var(--fg); font-family: var(--font-body); font-size: 12px; }
+.tb { fill: var(--fg); font-family: var(--font-body); font-size: 14px; font-weight: 700; }
+.ts { fill: var(--muted); font-family: var(--font-body); font-size: 11px; }
+.tm { fill: var(--muted); font-family: var(--font-mono); font-size: 10px; letter-spacing: .04em; }
+.ta { fill: var(--accent); font-family: var(--font-body); font-size: 12px; font-weight: 700; }
+.tw { fill: var(--warm); font-family: var(--font-body); font-size: 12px; font-weight: 700; }
+svg text { dominant-baseline: middle; }
+
+/* lists */
+ul.plain { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 6px; }
+.tasks { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.task { border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; background: var(--panel); font-size: 15px; display: flex; gap: 10px; align-items: flex-start; }
+.task b { font-family: var(--font-mono); color: var(--accent); font-size: 13px; padding-top: 2px; }
+
+/* 1.1 work backward */
+.backward { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; }
+.step { flex: 1 1 150px; min-width: 0; border: 1px solid var(--line); background: var(--node); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 1.55; }
+.step .k { font-family: var(--font-mono); font-size: 11px; color: var(--muted); letter-spacing: .05em; }
+.step.goal { background: var(--ok-soft); border-color: var(--ok); }
+.step.pick { background: var(--accent-soft); border-color: var(--accent); }
+.arrow-row { font-family: var(--font-mono); font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.spectra { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.spec { background: var(--node); border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.spec-title { font-weight: 700; font-size: 14px; }
+.grad { height: 10px; border-radius: 5px; background: linear-gradient(90deg, var(--ok), var(--warm)); }
+.ends { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--muted); }
+.ends span:last-child { text-align: right; }
+.quote { border-left: 3px solid var(--accent); padding: 4px 0 4px 16px; font-size: 17px; }
+.quote small { display: block; color: var(--muted); font-size: 13px; }
+
+/* patterns grid */
+.patterns { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.pat { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.pat h4 { margin: 0; font-size: 16px; display: flex; flex-direction: column; gap: 2px; }
+.pat p { font-size: 14px; line-height: 1.6; }
+.pat .fit { font-size: 13px; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 8px; }
+.pat .fit b { color: var(--fg); font-weight: 500; }
+.pat svg { background: var(--bg); border-radius: 6px; }
+
+.callout { border: 1px solid var(--accent); background: var(--accent-soft); border-radius: 10px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; }
+.callout .eyebrow { color: var(--accent); }
+.callout.warm { border-color: var(--warm); background: var(--warm-soft); }
+.callout.warm .eyebrow { color: var(--warm); }
+
+/* heuristic */
+.vs { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.vs > div { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; min-width: 0; }
+.vs .tag { font-family: var(--font-mono); font-size: 12px; font-weight: 600; }
+.vs .ok .tag { color: var(--ok); } .vs .warm .tag { color: var(--warm); } .vs .accent .tag { color: var(--accent); }
+
+/* cost chips */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font-size: 13px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--warm); color: var(--warm); background: var(--warm-soft); }
+
+/* pillars */
+.pillars { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.pillar { background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--accent); border-radius: 6px; padding: 14px; display: flex; flex-direction: column; gap: 8px; min-width: 0; font-size: 14px; line-height: 1.55; }
+.pillar h4 { margin: 0; font-size: 16px; display: flex; flex-direction: column; }
+.pillar .ev { color: var(--muted); font-size: 13px; border-top: 1px dashed var(--line); padding-top: 8px; }
+.split { display: flex; height: 44px; border-radius: 8px; overflow: hidden; font-size: 13px; font-weight: 500; }
+.split div { display: flex; align-items: center; padding: 0 12px; min-width: 0; white-space: nowrap; overflow: hidden; }
+.split .fast { flex: 9; background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); border-radius: 8px 0 0 8px; }
+.split .slow { flex: 1.6; background: var(--warm-soft); color: var(--warm); border: 1px solid var(--warm); border-left: 0; border-radius: 0 8px 8px 0; justify-content: center; }
+.legend { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+
+/* takeaways */
+.takeaways { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.takeaways li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+.takeaways li::before { content: "✓"; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--ok-soft); color: var(--ok); font-size: 13px; font-weight: 700; margin-top: 3px; }
+
+.source { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; }
+.source a { color: var(--accent); }
+.note { font-size: 14px; color: var(--muted); }
+.c-accent { color: var(--accent); } .c-warm { color: var(--warm); } .c-ok { color: var(--ok); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0 0L10 5L0 10z"/></marker>
+    <marker id="ar-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah-a" d="M0 0L10 5L0 10z"/></marker>
+    <marker id="ar-w" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah-w" d="M0 0L10 5L0 10z"/></marker>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">CCA-F 코스 · Part 2 · Domain 7</div>
+  <h1>개발자 생산성과 운영 지원 <span class="en">Developer Productivity & Operational Enablement</span></h1>
+  <p class="lead prose">시스템을 만들고 운영하는 사람들을 더 빠르고 실수 적게 만드는 일. 비중은 가장 작지만, 개발팀을 자문하는 아키텍트에게는 <strong>실질적인 차별점</strong>입니다.</p>
+  <div class="weight"><div class="weight-bar" role="img" aria-label="시험 비중 7%"><span style="width:7%"></span></div><small>시험 비중 7%</small></div>
+</header>
+
+<section>
+<h2>공식 출제 항목 <span class="en">Official task statements</span></h2>
+<div class="tasks"><div class="task"><b>7.1</b><span>팀을 위한 Claude 도구와 환경 구성 (예: Claude Code)</span></div><div class="task"><b>7.2</b><span>AI 보조 도구로 개발자 워크플로 개선</span></div><div class="task"><b>7.3</b><span>디버깅과 운영 이슈 해결 지원</span></div></div>
+</section>
+<section>
+<h2><span class="no">7.1</span>팀을 위한 도구·환경 구성 <span class="en">Configuring Claude tools and environments for teams</span></h2>
+<p class="prose">Claude Code 같은 에이전트형 코딩 도구는 코드베이스를 읽고, 여러 파일을 수정하고, 테스트와 셸 명령을 실행하는 일을 <strong>사람의 감독 아래</strong> 개발 워크플로 안에서 하게 합니다. 개인이 아니라 팀을 위해 설계할 때는 네 가지를 다룹니다.</p>
+<div class="fig"><div class="fig-cap">도면 1 · 팀 구성의 네 기둥</div>
+<svg class="m" viewBox="0 0 228 174" style="max-width:297px" role="img" aria-label="팀을 위한 도구 구성이 공유 설정, 권한 경계, 재사용 지식, 플러그인 거버넌스의 네 가지로 갈라진다.">
+<rect class="n-o" x="6" y="73" width="61" height="28" rx="6"/>
+<text class="t" x="37" y="87" text-anchor="middle">팀 구성</text>
+<path class="e" d="M67 87 C84 87 84 24 97 24" marker-end="url(#ar)"/>
+<rect class="n-a" x="101" y="10" width="121" height="28" rx="6"/>
+<text class="t" x="162" y="24" text-anchor="middle">공유 설정</text>
+<path class="e" d="M67 87 C84 87 84 66 97 66" marker-end="url(#ar)"/>
+<rect class="n-w" x="101" y="52" width="121" height="28" rx="6"/>
+<text class="t" x="162" y="66" text-anchor="middle">권한 경계</text>
+<path class="e" d="M67 87 C84 87 84 108 97 108" marker-end="url(#ar)"/>
+<rect class="n-a" x="101" y="94" width="121" height="28" rx="6"/>
+<text class="t" x="162" y="108" text-anchor="middle">재사용 지식</text>
+<path class="e" d="M67 87 C84 87 84 150 97 150" marker-end="url(#ar)"/>
+<rect class="n-w" x="101" y="136" width="121" height="28" rx="6"/>
+<text class="t" x="162" y="150" text-anchor="middle">플러그인 거버넌스</text>
+</svg>
+</div>
+<div class="patterns">
+<div class="pat"><h4>공유 설정 <span class="en">Shared configuration</span></h4><svg class="m" viewBox="0 0 292 68" style="max-width:379px" role="img" aria-label="저장소에 체크인한 설정 파일이 모든 개발자의 세션에 같은 규칙을 적용한다.">
+<rect class="n" x="6" y="30" width="97" height="28" rx="6"/>
+<text class="t" x="55" y="44" text-anchor="middle">체크인된 설정</text>
+<path class="e" d="M103 44 H117" marker-end="url(#ar)"/>
+<rect class="n-a" x="121" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="158" y="44" text-anchor="middle">모든 세션</text>
+<path class="e" d="M194 44 H208" marker-end="url(#ar)"/>
+<rect class="n-o" x="212" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="249" y="44" text-anchor="middle">같은 규칙</text>
+</svg><p>관례, 아키텍처, 제약을 적은 <strong>체크인된 프로젝트 지침 파일</strong>. 모든 개발자의 AI 보조 세션이 사람마다 다시 만들지 않고 같은 하우스 룰을 따릅니다.</p></div>
+<div class="pat"><h4>권한 경계 <span class="en">Permission boundaries</span></h4><svg class="m" viewBox="0 0 187 110" style="max-width:243px" role="img" aria-label="도구의 행동이 자율 실행과 명시적 승인으로 나뉜다.">
+<path class="n-o" d="M30 32 L54 55 L30 78 L6 55 Z"/>
+<text class="t" x="30" y="55" text-anchor="middle">행동</text>
+<path class="e" d="M54 55 C71 55 71 29 84 29" marker-end="url(#ar)"/>
+<rect class="n-o" x="88" y="10" width="93" height="38" rx="6"/>
+<text class="t" x="134" y="21" text-anchor="middle">자율</text>
+<text class="ts" x="134" y="37" text-anchor="middle">읽기 · 테스트</text>
+<path class="e" d="M54 55 C71 55 71 81 84 81" marker-end="url(#ar)"/>
+<rect class="n-w" x="88" y="62" width="93" height="38" rx="6"/>
+<text class="t" x="134" y="73" text-anchor="middle">승인</text>
+<text class="ts" x="134" y="89" text-anchor="middle">파괴적 · 푸시</text>
+</svg><p>도구가 자율로 할 수 있는 일(파일 읽기, 테스트 실행)과 개발자의 명시적 승인이 필요한 일(파괴적 명령, 프로덕션 브랜치 푸시)을 나눕니다. Domain 3의 <strong>최소 권한</strong> 원칙을 개발 도구에 적용한 것입니다.</p></div>
+<div class="pat"><h4>재사용 팀 지식 <span class="en">Reusable team knowledge</span></h4><svg class="m" viewBox="0 0 282 68" style="max-width:367px" role="img" aria-label="반복되는 절차를 스킬이나 템플릿으로 묶어 팀 전체가 하나의 검증된 절차를 쓴다.">
+<rect class="n" x="6" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="43" y="44" text-anchor="middle">반복 절차</text>
+<path class="e" d="M79 44 H93" marker-end="url(#ar)"/>
+<rect class="n-a" x="97" y="30" width="100" height="28" rx="6"/>
+<text class="t" x="147" y="44" text-anchor="middle">스킬 · 템플릿</text>
+<path class="e" d="M197 44 H211" marker-end="url(#ar)"/>
+<rect class="n-o" x="215" y="30" width="61" height="28" rx="6"/>
+<text class="t" x="245" y="44" text-anchor="middle">팀 전체</text>
+</svg><p>배포 체크리스트, 코드 리뷰 기준, 스캐폴딩 패턴 같은 반복 절차를 <strong>재사용 가능한 스킬이나 템플릿</strong>으로 묶습니다. 엔지니어마다 프롬프트를 즉흥으로 만드는 대신 잘 검증된 절차 하나를 씁니다.</p></div>
+<div class="pat"><h4>플러그인 거버넌스 <span class="en">Plugin/extension governance</span></h4><svg class="m" viewBox="0 0 223 68" style="max-width:290px" role="img" aria-label="도구, 커넥터, 스킬 패키지를 도입하기 전에 출처, 범위, 업데이트 절차를 검토한다.">
+<rect class="n" x="6" y="30" width="85" height="28" rx="6"/>
+<text class="t" x="49" y="44" text-anchor="middle">패키지 도입</text>
+<path class="e" d="M91 44 H105" marker-end="url(#ar)"/>
+<path class="n-o" d="M133 26 L157 44 L133 62 L109 44 Z"/>
+<text class="t" x="133" y="44" text-anchor="middle">검토</text>
+<path class="e" d="M157 44 H171" marker-end="url(#ar)"/>
+<rect class="n-o" x="175" y="30" width="42" height="28" rx="6"/>
+<text class="t" x="196" y="44" text-anchor="middle">사용</text>
+</svg><p>도구·커넥터·스킬을 설치 가능한 패키지로 도입하면, 새 프로덕션 의존성과 같은 검토 규율을 적용합니다. <strong>출처, 범위, 업데이트 절차</strong>를 봅니다.</p></div>
+</div>
+</section>
+<section>
+<h2><span class="no">7.2</span>AI 보조 워크플로 개선 <span class="en">Improving developer workflows with AI-assisted tooling</span></h2>
+<p class="prose">개인 생산성을 넘어, 아키텍트의 일은 AI 보조 도구가 워크플로의 속도만이 아니라 <strong>모양을 바꾸는 곳</strong>을 찾는 것입니다.</p>
+<div class="fig"><div class="fig-cap">도면 2 · 코드 리뷰: 자동 1차 통과, 사람은 판단</div>
+<svg class="m" viewBox="0 0 399 78" style="max-width:519px" role="img" aria-label="변경이 자동 1차 점검을 거친 뒤 사람 리뷰어가 아키텍처와 비즈니스 로직을 판단한다.">
+<rect class="n" x="6" y="30" width="42" height="38" rx="6"/>
+<text class="t" x="27" y="49" text-anchor="middle">변경</text>
+<path class="e" d="M48 49 H62" marker-end="url(#ar)"/>
+<rect class="n-a" x="66" y="30" width="146" height="38" rx="6"/>
+<text class="t" x="139" y="41" text-anchor="middle">자동 1차</text>
+<text class="ts" x="139" y="57" text-anchor="middle">스타일 · 버그 · 테스트</text>
+<path class="e" d="M212 49 H226" marker-end="url(#ar)"/>
+<rect class="n-w" x="230" y="30" width="104" height="38" rx="6"/>
+<text class="t" x="282" y="41" text-anchor="middle">사람 리뷰</text>
+<text class="ts" x="282" y="57" text-anchor="middle">아키텍처 · 로직</text>
+<path class="e" d="M333 49 H347" marker-end="url(#ar)"/>
+<rect class="n-o" x="351" y="30" width="42" height="38" rx="6"/>
+<text class="t" x="372" y="49" text-anchor="middle">승인</text>
+</svg>
+</div>
+<div class="pillars"><div class="pillar"><h4>보일러플레이트 빠른 반복 <span class="en">Boilerplate & scaffolding</span></h4><span>보일러플레이트와 스캐폴딩을 빨리 돌려, 엔지니어의 시간을 <strong>판단이 필요한 부분</strong>에 씁니다.</span><span class="ev">판단 업무에 시간 확보</span></div><div class="pillar"><h4>코드 리뷰 보강 <span class="en">Code review augmentation</span></h4><span>사람 리뷰어의 시간을 쓰기 전에 자동 1차 통과가 스타일, 흔한 버그, 누락된 테스트를 잡습니다. 아키텍처와 비즈니스 로직의 정확성은 <strong>사람 리뷰를 대체하지 않습니다</strong>.</span><span class="ev">사람 리뷰 대체 아님</span></div><div class="pillar"><h4>즉시 문서화 <span class="en">Documentation-as-you-go</span></h4><span>코드 변경에 맞춰 문서를 만들고 동기화해, 문서가 낡아 가는 고질적 문제를 다룹니다.</span><span class="ev">문서 낡음 방지</span></div><div class="pillar"><h4>온보딩 가속 <span class="en">Onboarding acceleration</span></h4><span>신입 엔지니어가 AI 보조 도구로 낯선 코드베이스를 맨땅에서 읽는 것보다 빨리 이해합니다.</span><span class="ev">이해 속도</span></div></div>
+<div class="callout "><span class="eyebrow">Domain 1과 같은 주제</span>
+<p class="prose">개발 도구 도입에도 "<strong>단순하게 시작하고, 정당화될 때만 복잡도를 더한다</strong>"를 적용합니다. 어떤 AI 보조 워크플로 변경이 실제로 <strong>사이클 타임이나 결함률</strong>을 줄이는지 측정한 뒤에 팀 전체 표준으로 삼습니다.</p>
+</div>
+</section>
+<section>
+<h2><span class="no">7.3</span>디버깅과 운영 이슈 해결 <span class="en">Supporting debugging and operational issue resolution</span></h2>
+<p class="prose">시스템을 설계한 아키텍트가 깨졌을 때 <strong>디버깅이 빠르도록</strong> 만들어야 합니다. 실천 패턴은 네 가지입니다.</p>
+<div class="fig"><div class="fig-cap">도면 3 · 사고에서 복구까지</div>
+<svg class="m" viewBox="0 0 443 78" style="max-width:576px" role="img" aria-label="사고가 재현 가능한 추적으로 재구성되고, AI 보조 원인 분석을 거쳐 사람이 수정을 결정하며 필요하면 빠르게 롤백한다.">
+<rect class="n-w" x="6" y="30" width="42" height="38" rx="6"/>
+<text class="t" x="27" y="49" text-anchor="middle">사고</text>
+<path class="e" d="M48 49 H62" marker-end="url(#ar)"/>
+<rect class="n-a" x="66" y="30" width="85" height="38" rx="6"/>
+<text class="t" x="109" y="41" text-anchor="middle">추적 재구성</text>
+<text class="ts" x="109" y="57" text-anchor="middle">로그</text>
+<path class="e" d="M151 49 H165" marker-end="url(#ar)"/>
+<rect class="n-a" x="169" y="30" width="73" height="38" rx="6"/>
+<text class="t" x="206" y="41" text-anchor="middle">원인 분석</text>
+<text class="ts" x="206" y="57" text-anchor="middle">AI 보조</text>
+<path class="e" d="M242 49 H256" marker-end="url(#ar)"/>
+<path class="n-o" d="M300 26 L340 49 L300 72 L260 49 Z"/>
+<text class="t" x="300" y="49" text-anchor="middle">사람 판단</text>
+<path class="e" d="M340 49 H354" marker-end="url(#ar)"/>
+<rect class="n-o" x="358" y="30" width="80" height="38" rx="6"/>
+<text class="t" x="397" y="41" text-anchor="middle">롤백</text>
+<text class="ts" x="397" y="57" text-anchor="middle">빠른 되돌림</text>
+</svg>
+</div>
+<div class="pillars"><div class="pillar"><h4>재현 가능한 추적 <span class="en">Reproducible traces</span></h4><span>모든 프로덕션 사고는 로그로 재구성할 수 있어야 합니다(Domain 3의 관측성). <strong>정확한 프롬프트, 검색된 컨텍스트, 도구 호출, 모델 버전</strong>이 남아 있어야 합니다.</span><span class="ev">Domain 3</span></div><div class="pillar"><h4>AI 보조 원인 분석 <span class="en">AI-assisted root-causing</span></h4><span>로그와 코드에 적절히 접근하게 한 Claude로 Domain 4의 진단을 빠르게 합니다. 회귀가 검색, 프롬프트, 모델·설정 변경 중 어디서 왔는지 좁힙니다. 프로덕션 수정의 <strong>최종 결정은 사람</strong>이 합니다.</span><span class="ev">Domain 4 + 사람 판단</span></div><div class="pillar"><h4>구전 지식 대신 런북 <span class="en">Runbooks over tribal knowledge</span></h4><span>운영 절차를 한 엔지니어의 기억에만 두지 않고, 문서화하고 최신으로 유지합니다(Domain 6).</span><span class="ev">Domain 6</span></div><div class="pillar"><h4>빠른 롤백 경로 <span class="en">Fast rollback paths</span></h4><span>프롬프트, 모델, 설정 변경은 회귀가 감지되면 <strong>빠르게 되돌릴 수 있어야</strong> 하고, 전체 재배포 주기를 요구해서는 안 됩니다.</span><span class="ev">전체 재배포 없이</span></div></div>
+</section>
+<section>
+<h2>핵심 정리 <span class="en">Key takeaways: Domain 7</span></h2>
+<ul class="takeaways"><li><span>에이전트형 코딩 도구 설정을 팀 단위로 표준화합니다: <strong>공유 관례, 최소 권한 경계, 재사용 스킬·템플릿</strong>. 개발자별 즉흥은 안 됩니다.</span></li><li><span>새 AI 보조 워크플로는 <strong>사이클 타임이나 결함률이 실제로 변하는 곳</strong>에 적용합니다. 도입 자체가 목적이 아닙니다.</span></li><li><span>디버깅 지원은 <strong>재현 가능한 추적, 사람의 판단과 짝을 이룬 AI 보조 원인 분석, 최신 런북, 빠른 롤백 경로</strong>입니다.</span></li></ul>
+</section>
+
+<p class="source">원문: <a href="https://amitj.me/claude/course/ccarp/2/#page-d7">원문: CCA-F 코스 Domain 7</a> 페이지 내용만 한국어로 정리하고 도식화했습니다.</p>
+
+</div>

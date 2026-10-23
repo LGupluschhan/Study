@@ -1,0 +1,321 @@
+<title>시험 블루프린트</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: 설계 도면(blueprint) 노트 — 좁은 본문 열 + 모눈 도면 패널. 섹션 번호는 원문 번호 그대로.
+   build_page.py가 이 파일을 <style>에 그대로 넣는다. 색은 모두 토큰으로만 쓴다(라이트/다크 자동). */
+:root {
+  --bg: #f5f7fa;
+  --panel: #ffffff;
+  --fg: #18212e;
+  --muted: #5a6779;
+  --line: #c9d2de;
+  --grid: #e6ebf2;
+  --accent: #2456c9;
+  --accent-soft: #e4ecfb;
+  --warm: #b8621b;
+  --warm-soft: #fbeedf;
+  --ok: #2f7d4f;
+  --ok-soft: #e2f2e8;
+  --node: #ffffff;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f141c; --panel: #161d28; --fg: #e3e8ef; --muted: #96a3b5; --line: #334155; --grid: #1e2734;
+    --accent: #7ea6ff; --accent-soft: #1c2a47; --warm: #f0a35e; --warm-soft: #3a2816;
+    --ok: #6cc892; --ok-soft: #173526; --node: #1b2431; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f141c; --panel: #161d28; --fg: #e3e8ef; --muted: #96a3b5; --line: #334155; --grid: #1e2734;
+  --accent: #7ea6ff; --accent-soft: #1c2a47; --warm: #f0a35e; --warm-soft: #3a2816;
+  --ok: #6cc892; --ok-soft: #173526; --node: #1b2431; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.75;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 80px;
+  word-break: keep-all; overflow-wrap: anywhere;
+}
+.wrap { max-width: 920px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+.prose { max-width: 680px; }
+h1, h2, h3 { text-wrap: balance; line-height: 1.35; margin: 0; }
+h1 { font-size: clamp(28px, 5vw, 40px); font-weight: 700; }
+h2 { font-size: 24px; font-weight: 700; display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+h2 .no { font-family: var(--font-mono); font-size: 15px; color: var(--accent); font-weight: 600; }
+h3 { font-size: 18px; font-weight: 700; }
+p { margin: 0; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.en { font-family: var(--font-mono); font-size: .78em; color: var(--muted); font-weight: 400; }
+section { display: flex; flex-direction: column; gap: 18px; }
+.lead { font-size: 18px; color: var(--muted); }
+
+/* header */
+header { display: flex; flex-direction: column; gap: 14px; }
+.weight { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.weight-bar { width: 220px; max-width: 100%; height: 10px; border-radius: 5px; background: var(--grid); overflow: hidden; }
+.weight-bar span { display: block; height: 100%; background: var(--accent); }
+.weight small { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+
+/* blueprint panel */
+.fig {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+  padding: 20px; display: flex; flex-direction: column; gap: 14px;
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 24px 24px; background-position: -1px -1px;
+}
+.fig-cap { font-family: var(--font-mono); font-size: 12px; color: var(--muted); letter-spacing: .04em; }
+.scroll { overflow-x: auto; }
+svg.d { display: block; width: 100%; height: auto; min-width: 560px; }
+svg.m { display: block; width: 100%; height: auto; }
+
+/* svg styling */
+.n { fill: var(--node); stroke: var(--line); stroke-width: 1.5; }
+.n-a { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+.n-w { fill: var(--warm-soft); stroke: var(--warm); stroke-width: 1.5; }
+.n-o { fill: var(--ok-soft); stroke: var(--ok); stroke-width: 1.5; }
+.n-dash { fill: var(--node); stroke: var(--muted); stroke-width: 1.3; stroke-dasharray: 4 3; }
+.bound { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 6 4; }
+.e { fill: none; stroke: var(--muted); stroke-width: 1.6; }
+.e-a { fill: none; stroke: var(--accent); stroke-width: 1.8; }
+.e-w { fill: none; stroke: var(--warm); stroke-width: 1.8; }
+.e-dash { stroke-dasharray: 5 4; }
+.ah { fill: var(--muted); } .ah-a { fill: var(--accent); } .ah-w { fill: var(--warm); }
+.t { fill: var(--fg); font-family: var(--font-body); font-size: 12px; }
+.tb { fill: var(--fg); font-family: var(--font-body); font-size: 14px; font-weight: 700; }
+.ts { fill: var(--muted); font-family: var(--font-body); font-size: 11px; }
+.tm { fill: var(--muted); font-family: var(--font-mono); font-size: 10px; letter-spacing: .04em; }
+.ta { fill: var(--accent); font-family: var(--font-body); font-size: 12px; font-weight: 700; }
+.tw { fill: var(--warm); font-family: var(--font-body); font-size: 12px; font-weight: 700; }
+svg text { dominant-baseline: middle; }
+
+/* lists */
+ul.plain { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 6px; }
+.tasks { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.task { border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; background: var(--panel); font-size: 15px; display: flex; gap: 10px; align-items: flex-start; }
+.task b { font-family: var(--font-mono); color: var(--accent); font-size: 13px; padding-top: 2px; }
+
+/* 1.1 work backward */
+.backward { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; }
+.step { flex: 1 1 150px; min-width: 0; border: 1px solid var(--line); background: var(--node); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 1.55; }
+.step .k { font-family: var(--font-mono); font-size: 11px; color: var(--muted); letter-spacing: .05em; }
+.step.goal { background: var(--ok-soft); border-color: var(--ok); }
+.step.pick { background: var(--accent-soft); border-color: var(--accent); }
+.arrow-row { font-family: var(--font-mono); font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.spectra { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.spec { background: var(--node); border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.spec-title { font-weight: 700; font-size: 14px; }
+.grad { height: 10px; border-radius: 5px; background: linear-gradient(90deg, var(--ok), var(--warm)); }
+.ends { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--muted); }
+.ends span:last-child { text-align: right; }
+.quote { border-left: 3px solid var(--accent); padding: 4px 0 4px 16px; font-size: 17px; }
+.quote small { display: block; color: var(--muted); font-size: 13px; }
+
+/* patterns grid */
+.patterns { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.pat { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.pat h4 { margin: 0; font-size: 16px; display: flex; flex-direction: column; gap: 2px; }
+.pat p { font-size: 14px; line-height: 1.6; }
+.pat .fit { font-size: 13px; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 8px; }
+.pat .fit b { color: var(--fg); font-weight: 500; }
+.pat svg { background: var(--bg); border-radius: 6px; }
+
+.callout { border: 1px solid var(--accent); background: var(--accent-soft); border-radius: 10px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; }
+.callout .eyebrow { color: var(--accent); }
+.callout.warm { border-color: var(--warm); background: var(--warm-soft); }
+.callout.warm .eyebrow { color: var(--warm); }
+
+/* heuristic */
+.vs { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.vs > div { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; min-width: 0; }
+.vs .tag { font-family: var(--font-mono); font-size: 12px; font-weight: 600; }
+.vs .ok .tag { color: var(--ok); } .vs .warm .tag { color: var(--warm); } .vs .accent .tag { color: var(--accent); }
+
+/* cost chips */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font-size: 13px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--warm); color: var(--warm); background: var(--warm-soft); }
+
+/* pillars */
+.pillars { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.pillar { background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--accent); border-radius: 6px; padding: 14px; display: flex; flex-direction: column; gap: 8px; min-width: 0; font-size: 14px; line-height: 1.55; }
+.pillar h4 { margin: 0; font-size: 16px; display: flex; flex-direction: column; }
+.pillar .ev { color: var(--muted); font-size: 13px; border-top: 1px dashed var(--line); padding-top: 8px; }
+.split { display: flex; height: 44px; border-radius: 8px; overflow: hidden; font-size: 13px; font-weight: 500; }
+.split div { display: flex; align-items: center; padding: 0 12px; min-width: 0; white-space: nowrap; overflow: hidden; }
+.split .fast { flex: 9; background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); border-radius: 8px 0 0 8px; }
+.split .slow { flex: 1.6; background: var(--warm-soft); color: var(--warm); border: 1px solid var(--warm); border-left: 0; border-radius: 0 8px 8px 0; justify-content: center; }
+.legend { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+
+/* takeaways */
+.takeaways { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.takeaways li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+.takeaways li::before { content: "✓"; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--ok-soft); color: var(--ok); font-size: 13px; font-weight: 700; margin-top: 3px; }
+
+.source { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; }
+.source a { color: var(--accent); }
+.note { font-size: 14px; color: var(--muted); }
+.c-accent { color: var(--accent); } .c-warm { color: var(--warm); } .c-ok { color: var(--ok); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0 0L10 5L0 10z"/></marker>
+    <marker id="ar-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah-a" d="M0 0L10 5L0 10z"/></marker>
+    <marker id="ar-w" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah-w" d="M0 0L10 5L0 10z"/></marker>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">CCA-F 코스 · Part 2 · 시작 · 공식 기준</div>
+  <h1>시험 블루프린트와 정책 <span class="en">Exam Blueprint & Policies</span></h1>
+  <p class="lead prose">공식 Claude Certified Architect Professional 시험 안내서(버전 1.0, 2026년 7월 시행, 시험 코드 CCAR-P)를 요약한 <strong>시험 범위의 공식 기준</strong>입니다. 이 책의 나머지는 이 범위를 가르치려고 만들어졌습니다.</p>
+  
+</header>
+
+<section>
+<h2>시험 한눈에 보기 <span class="en">Exam at a glance</span></h2>
+<div class="pillars"><div class="pillar"><h4>문항 <span class="en">Items</span></h4><span>채점 문항 <strong>63개</strong>. 객관식과 복수 선택(문항마다 몇 개를 고를지 명시).</span><span class="ev">63문항</span></div><div class="pillar"><h4>제한 시간 <span class="en">Time limit</span></h4><span><strong>120분</strong>. 체크인과 설문을 포함한 총 좌석 시간은 약 135분으로 계획합니다.</span><span class="ev">120분</span></div><div class="pillar"><h4>방식 <span class="en">Delivery</span></h4><span>Pearson VUE 감독 시험. 온라인 감독 또는 시험장.</span><span class="ev">온라인 · 시험장</span></div><div class="pillar"><h4>합격 점수 <span class="en">Passing score</span></h4><span>100~1,000 척도에서 환산 점수 <strong>720</strong>. 절대평가(상대평가 아님).</span><span class="ev">720 / 1,000</span></div><div class="pillar"><h4>응시료 <span class="en">Fee</span></h4><span><strong>$175</strong> USD. 파트너 등급 할인이 적용될 수 있습니다.</span><span class="ev">$175</span></div><div class="pillar"><h4>유효 기간 <span class="en">Validity</span></h4><span>취득일로부터 <strong>12개월</strong>. 이후 기한 내 무료 갱신 평가.</span><span class="ev">12개월</span></div><div class="pillar"><h4>재응시 <span class="en">Retakes</span></h4><span>1·2·3회 불합격 뒤 각각 14 / 30 / 90일 대기. 12개월 기준 최대 4회.</span><span class="ev">14 · 30 · 90일</span></div></div>
+</section>
+<section>
+<h2>콘텐츠 도메인과 비중 <span class="en">Content domains and weights</span></h2>
+<div class="fig"><div class="fig-cap">도면 1 · 일곱 도메인의 시험 비중 (합계 100%)</div>
+<svg class="m" viewBox="0 0 560 262" role="img" aria-label="도메인별 시험 비중 막대 그래프. 통합 19퍼센트, 솔루션 설계 17퍼센트, 평가 16퍼센트, 거버넌스와 소통 각 14퍼센트, 모델 13퍼센트, 개발자 생산성 7퍼센트."><text class="t" x="0" y="27">1 솔루션 설계</text><rect class="n n-w" x="150" y="8" width="323" height="26" rx="4"/><text class="tb" x="481" y="27">17%</text><text class="t" x="0" y="63">2 모델·프롬프트</text><rect class="n n-a" x="150" y="44" width="247" height="26" rx="4"/><text class="tb" x="405" y="63">13%</text><text class="t" x="0" y="99">3 통합</text><rect class="n n-w" x="150" y="80" width="361" height="26" rx="4"/><text class="tb" x="519" y="99">19%</text><text class="t" x="0" y="135">4 평가·최적화</text><rect class="n n-a" x="150" y="116" width="304" height="26" rx="4"/><text class="tb" x="462" y="135">16%</text><text class="t" x="0" y="171">5 거버넌스·안전</text><rect class="n n-a" x="150" y="152" width="266" height="26" rx="4"/><text class="tb" x="424" y="171">14%</text><text class="t" x="0" y="207">6 소통·수명주기</text><rect class="n n-a" x="150" y="188" width="266" height="26" rx="4"/><text class="tb" x="424" y="207">14%</text><text class="t" x="0" y="243">7 개발자 생산성</text><rect class="n n-a" x="150" y="224" width="133" height="26" rx="4"/><text class="tb" x="291" y="243">7%</text></svg>
+</div>
+<div class="callout "><span class="eyebrow">공부 시간 배분</span>
+<p class="prose"><strong>통합(19%)과 솔루션 설계(17%)</strong>를 합치면 시험의 3분의 1이 넘습니다. RAG 설계, 연결 프로토콜(MCP vs. API/CLI vs. 에이전트 간 통신), 엔드 투 엔드 아키텍처 패턴에 공부 시간을 <strong>비례 이상으로</strong> 씁니다.</p>
+</div>
+</section>
+<section>
+<h2>대상과 최소 자격 응시자 <span class="en">Intended audience & minimally qualified candidate</span></h2>
+<p class="prose">Claude 기반 시스템의 전체 수명주기(모델 선택, 프롬프트·컨텍스트 엔지니어링, 도구와 에이전트 오케스트레이션, 안전·컴플라이언스·거버넌스)를 책임지고, 고객이나 내부 이해관계자에게 아키텍처를 자문하는 <strong>중급~시니어 솔루션 아키텍트, AI/ML 엔지니어, 기술 리드, 시니어 소프트웨어 엔지니어</strong>가 대상입니다. 신입 개발자, 일반 사용자, 시스템 설계 책임 없이 프롬프트 작성만 하는 역할은 명시적으로 제외됩니다.</p>
+<div class="fig"><div class="fig-cap">도면 2 · 권장 배경 (필수 아님)</div>
+<svg class="m" viewBox="0 0 257 174" style="max-width:334px" role="img" aria-label="권장 배경이 소프트웨어 공학 기초, 아키텍처 경력 3년 이상, Claude 운영 경험 6개월 이상, 발굴부터 운영화까지의 경험으로 이루어진다.">
+<rect class="n-o" x="6" y="73" width="73" height="28" rx="6"/>
+<text class="t" x="43" y="87" text-anchor="middle">권장 배경</text>
+<path class="e" d="M79 87 C96 87 96 24 109 24" marker-end="url(#ar)"/>
+<rect class="n-a" x="113" y="10" width="138" height="28" rx="6"/>
+<text class="t" x="182" y="24" text-anchor="middle">공학 기초</text>
+<path class="e" d="M79 87 C96 87 96 66 109 66" marker-end="url(#ar)"/>
+<rect class="n-a" x="113" y="52" width="138" height="28" rx="6"/>
+<text class="t" x="182" y="66" text-anchor="middle">아키텍처 3년+</text>
+<path class="e" d="M79 87 C96 87 96 108 109 108" marker-end="url(#ar)"/>
+<rect class="n-a" x="113" y="94" width="138" height="28" rx="6"/>
+<text class="t" x="182" y="108" text-anchor="middle">Claude 운영 6개월+</text>
+<path class="e" d="M79 87 C96 87 96 150 109 150" marker-end="url(#ar)"/>
+<rect class="n-a" x="113" y="136" width="138" height="28" rx="6"/>
+<text class="t" x="182" y="150" text-anchor="middle">발굴→운영 경험</text>
+</svg>
+</div>
+<p class="note">소프트웨어 공학 모범 사례의 기초, 시스템 아키텍처·플랫폼 엔지니어링 3년 이상, Claude 또는 유사 LLM 시스템의 프로덕션 실무 6개월 이상, 발굴부터 운영화까지 시스템을 납품한 경험을 권장합니다. <strong>필수 선행 조건은 없고</strong>, 자격은 시험 성적만으로 부여됩니다.</p>
+</section>
+<section>
+<h2>채점과 결과 <span class="en">Scoring & results</span></h2>
+<p class="prose">CCAR-P는 <strong>절대평가</strong>입니다. 다른 응시자와 순위를 매기지 않고, 전문가가 정한 고정 기준에 대해 측정합니다.</p>
+<div class="fig"><div class="fig-cap">도면 3 · 점수 리포트에 담기는 것</div>
+<svg class="m" viewBox="0 0 266 162" style="max-width:346px" role="img" aria-label="점수 리포트가 합격 여부, 환산 점수, 도메인별 정답률을 보여 주며 합격 판정은 환산 점수가 한다.">
+<rect class="n-o" x="6" y="62" width="85" height="38" rx="6"/>
+<text class="t" x="49" y="81" text-anchor="middle">점수 리포트</text>
+<path class="e" d="M91 81 C108 81 108 29 121 29" marker-end="url(#ar)"/>
+<rect class="n-a" x="125" y="10" width="135" height="38" rx="6"/>
+<text class="t" x="192" y="29" text-anchor="middle">합격 / 불합격</text>
+<path class="e" d="M91 81 C108 81 108 81 121 81" marker-end="url(#ar)"/>
+<rect class="n-a" x="125" y="62" width="135" height="38" rx="6"/>
+<text class="t" x="192" y="73" text-anchor="middle">환산 점수</text>
+<text class="ts" x="192" y="89" text-anchor="middle">100~1,000 · 컷 720</text>
+<path class="e" d="M91 81 C108 81 108 133 121 133" marker-end="url(#ar)"/>
+<rect class="n-dash" x="125" y="114" width="135" height="38" rx="6"/>
+<text class="t" x="192" y="125" text-anchor="middle">도메인별 정답률</text>
+<text class="ts" x="192" y="141" text-anchor="middle">재응시 참고용</text>
+</svg>
+</div>
+<p class="note">도메인별 정답률은 재응시 때 겨냥할 곳을 찾는 데 유용하지만, 합격 여부를 가르는 기준은 아닙니다.</p>
+</section>
+<section>
+<h2>응시 규정, 재응시, 갱신 <span class="en">Conduct, retakes, and renewal</span></h2>
+<div class="fig"><div class="fig-cap">도면 4 · 불합격 횟수별 대기 기간</div>
+<div class="scroll"><svg class="d" viewBox="0 0 700 240" role="img" aria-label="1회 불합격 후 14일, 2회 후 30일, 3회 후 90일 대기. 12개월 동안 최대 4회, 응시마다 전체 응시료.">
+<path class="e-w" d="M30 220 V24" marker-end="url(#ar-w)"/>
+<text class="tw" x="40" y="22">불합격 횟수 ↑</text>
+<rect class="n-a" x="60" y="150" width="200" height="74" rx="6"/>
+<text class="tb" x="76" y="172">1회 불합격</text>
+<text class="ts" x="76" y="194">14일 후</text>
+<text class="ts" x="76" y="212">재응시</text>
+<rect class="n" x="270" y="100" width="200" height="124" rx="6"/>
+<text class="tb" x="286" y="122">2회 불합격</text>
+<text class="ts" x="286" y="144">30일 후</text>
+<text class="ts" x="286" y="162">재응시</text>
+<path class="e e-dash" d="M160 140 C160 110 200 96 262 96" marker-end="url(#ar)"/>
+<text class="ts" x="150" y="96" text-anchor="end">대기 길어짐</text>
+<rect class="n-w" x="480" y="50" width="200" height="174" rx="6"/>
+<text class="tb" x="496" y="72">3회 불합격</text>
+<text class="ts" x="496" y="94">90일 후</text>
+<text class="ts" x="496" y="112">재응시</text>
+<path class="e e-dash" d="M370 90 C370 60 410 46 472 46" marker-end="url(#ar)"/>
+<text class="ts" x="360" y="46" text-anchor="end">대기 길어짐</text>
+</svg></div>
+</div>
+<div class="chips"><span class="chip">12개월 최대 4회</span><span class="chip">응시마다 전체 응시료</span></div>
+<div class="fig"><div class="fig-cap">도면 5 · 자격의 유효 기간과 갱신</div>
+<svg class="m" viewBox="0 0 379 110" style="max-width:492px" role="img" aria-label="자격은 12개월 유효하며 기한 내 갱신은 무료 비감독 평가, 만료되면 전체 시험을 다시 봐야 한다.">
+<rect class="n-o" x="6" y="36" width="73" height="38" rx="6"/>
+<text class="t" x="43" y="55" text-anchor="middle">자격 취득</text>
+<path class="e" d="M79 55 H93" marker-end="url(#ar)"/>
+<path class="n-o" d="M157 32 L217 55 L157 78 L97 55 Z"/>
+<text class="t" x="157" y="55" text-anchor="middle">12개월 내 갱신?</text>
+<path class="e" d="M217 55 C234 55 234 29 247 29" marker-end="url(#ar)"/>
+<rect class="n-o" x="251" y="10" width="121" height="38" rx="6"/>
+<text class="t" x="312" y="21" text-anchor="middle">기한 내</text>
+<text class="ts" x="312" y="37" text-anchor="middle">무료 · 비감독 평가</text>
+<path class="e" d="M217 55 C234 55 234 81 247 81" marker-end="url(#ar)"/>
+<rect class="n-w" x="251" y="62" width="121" height="38" rx="6"/>
+<text class="t" x="312" y="73" text-anchor="middle">만료</text>
+<text class="ts" x="312" y="89" text-anchor="middle">전체 시험 재응시</text>
+</svg>
+</div>
+<div class="pillars"><div class="pillar"><h4>시험 방식 <span class="en">Closed-book</span></h4><span>노트, 번역 도구, AI 어시스턴트 사용이 허용되지 않습니다.</span><span class="ev">오픈북 아님</span></div><div class="pillar"><h4>신분 확인 <span class="en">ID</span></h4><span>등록 이름과 일치하는 <strong>정부 발급 사진 신분증</strong>이 필요합니다.</span><span class="ev">사진 ID 필수</span></div><div class="pillar"><h4>갱신 평가 <span class="en">Renewal</span></h4><span>기한 내 갱신은 인증 이후 무엇이 바뀌었는지 검토하는 무료·비감독 평가뿐입니다.</span><span class="ev">무료 · 비감독</span></div></div>
+</section>
+<section>
+<h2>샘플 문항 스타일 <span class="en">Sample item style (from the official guide)</span></h2>
+<div class="callout warm"><span class="eyebrow">공식 안내서의 예</span>
+<p class="prose">한 팀이 고객 지원 에이전트에게 티켓 읽기, 답변 초안 작성, 환불, 사용자 계정 삭제 기능을 노출했습니다. 지원 직원에게는 티켓 읽기와 답변 초안만 필요합니다. 최소 권한 원칙을 적용할 때 리스크를 가장 잘 줄이는 변경은?</p>
+</div>
+<div class="fig"><div class="fig-cap">도면 6 · 리스크를 없애는가, 관리만 하는가</div>
+<svg class="m" viewBox="0 0 230 162" style="max-width:298px" role="img" aria-label="선택지는 리스크를 제거하는 것과 관리만 하는 것으로 갈린다. 환불·삭제 도구 제거가 정답이다.">
+<path class="n-o" d="M36 58 L66 81 L36 104 L6 81 Z"/>
+<text class="t" x="36" y="81" text-anchor="middle">선택지</text>
+<path class="e" d="M66 81 C83 81 83 29 96 29" marker-end="url(#ar)"/>
+<rect class="n-o" x="100" y="10" width="124" height="38" rx="6"/>
+<text class="t" x="162" y="21" text-anchor="middle">도구 제거</text>
+<text class="ts" x="162" y="37" text-anchor="middle">환불 · 삭제 (정답)</text>
+<path class="e e-dash" d="M66 81 C83 81 83 81 96 81" marker-end="url(#ar)"/>
+<rect class="n-w" x="100" y="62" width="124" height="38" rx="6"/>
+<text class="t" x="162" y="73" text-anchor="middle">로깅 · 확인 창</text>
+<text class="ts" x="162" y="89" text-anchor="middle">탐지·보완 통제</text>
+<path class="e e-dash" d="M66 81 C83 81 83 133 96 133" marker-end="url(#ar)"/>
+<rect class="n-w" x="100" y="114" width="124" height="38" rx="6"/>
+<text class="t" x="162" y="125" text-anchor="middle">더 큰 모델</text>
+<text class="ts" x="162" y="141" text-anchor="middle">권한 범위 불변</text>
+</svg>
+</div>
+<div class="vs"><div class="ok"><span class="tag">정답</span>에이전트 구성에서 <strong>환불과 삭제 도구를 완전히 제거</strong>한다.</div><div class="warm"><span class="tag">오답</span>로깅과 확인 프롬프트는 불필요한 권한을 없애지 않는 탐지·보완 통제입니다. 더 큰 모델은 권한 범위를 바꾸지 않습니다.</div></div>
+<p class="note">"어떤 선택지가 리스크를 실제로 <strong>제거</strong>하는가, 어떤 것이 <strong>관리만</strong> 하는가" 패턴은 실제 시험 전반에서 계속 반복됩니다.</p>
+</section>
+<section>
+<h2>핵심 정리 <span class="en">Key takeaways</span></h2>
+<ul class="takeaways"><li><span>63문항, 120분, 환산 점수 <strong>720 / 1,000</strong>으로 합격하는 절대평가입니다.</span></li><li><span><strong>통합(19%)과 솔루션 설계(17%)</strong>에 시간을 더 씁니다. 일곱 도메인 비중은 17·13·19·16·14·14·7입니다.</span></li><li><span>재응시는 14 / 30 / 90일 대기, 12개월 최대 4회입니다. 자격은 12개월 유효하고 기한 내 갱신은 무료입니다.</span></li><li><span>시험은 클로즈드북이고 정부 발급 사진 ID가 필요합니다.</span></li><li><span>문항은 "리스크를 <strong>제거</strong>하는 선택지 vs. 관리만 하는 선택지"를 자주 묻습니다.</span></li></ul>
+</section>
+
+<p class="source">원문: <a href="https://amitj.me/claude/course/ccarp/2/#page-blueprint">원문: CCA-F 코스 Exam Blueprint</a> 페이지 내용만 한국어로 정리하고 도식화했습니다.</p>
+
+</div>

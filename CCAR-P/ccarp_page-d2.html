@@ -1,0 +1,459 @@
+<title>모델 프롬프팅 컨텍스트</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: 설계 도면(blueprint) 노트 — 좁은 본문 열 + 모눈 도면 패널. 섹션 번호는 원문 번호 그대로.
+   build_page.py가 이 파일을 <style>에 그대로 넣는다. 색은 모두 토큰으로만 쓴다(라이트/다크 자동). */
+:root {
+  --bg: #f5f7fa;
+  --panel: #ffffff;
+  --fg: #18212e;
+  --muted: #5a6779;
+  --line: #c9d2de;
+  --grid: #e6ebf2;
+  --accent: #2456c9;
+  --accent-soft: #e4ecfb;
+  --warm: #b8621b;
+  --warm-soft: #fbeedf;
+  --ok: #2f7d4f;
+  --ok-soft: #e2f2e8;
+  --node: #ffffff;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f141c; --panel: #161d28; --fg: #e3e8ef; --muted: #96a3b5; --line: #334155; --grid: #1e2734;
+    --accent: #7ea6ff; --accent-soft: #1c2a47; --warm: #f0a35e; --warm-soft: #3a2816;
+    --ok: #6cc892; --ok-soft: #173526; --node: #1b2431; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f141c; --panel: #161d28; --fg: #e3e8ef; --muted: #96a3b5; --line: #334155; --grid: #1e2734;
+  --accent: #7ea6ff; --accent-soft: #1c2a47; --warm: #f0a35e; --warm-soft: #3a2816;
+  --ok: #6cc892; --ok-soft: #173526; --node: #1b2431; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.75;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 80px;
+  word-break: keep-all; overflow-wrap: anywhere;
+}
+.wrap { max-width: 920px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+.prose { max-width: 680px; }
+h1, h2, h3 { text-wrap: balance; line-height: 1.35; margin: 0; }
+h1 { font-size: clamp(28px, 5vw, 40px); font-weight: 700; }
+h2 { font-size: 24px; font-weight: 700; display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+h2 .no { font-family: var(--font-mono); font-size: 15px; color: var(--accent); font-weight: 600; }
+h3 { font-size: 18px; font-weight: 700; }
+p { margin: 0; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.en { font-family: var(--font-mono); font-size: .78em; color: var(--muted); font-weight: 400; }
+section { display: flex; flex-direction: column; gap: 18px; }
+.lead { font-size: 18px; color: var(--muted); }
+
+/* header */
+header { display: flex; flex-direction: column; gap: 14px; }
+.weight { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.weight-bar { width: 220px; max-width: 100%; height: 10px; border-radius: 5px; background: var(--grid); overflow: hidden; }
+.weight-bar span { display: block; height: 100%; background: var(--accent); }
+.weight small { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+
+/* blueprint panel */
+.fig {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+  padding: 20px; display: flex; flex-direction: column; gap: 14px;
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 24px 24px; background-position: -1px -1px;
+}
+.fig-cap { font-family: var(--font-mono); font-size: 12px; color: var(--muted); letter-spacing: .04em; }
+.scroll { overflow-x: auto; }
+svg.d { display: block; width: 100%; height: auto; min-width: 560px; }
+svg.m { display: block; width: 100%; height: auto; }
+
+/* svg styling */
+.n { fill: var(--node); stroke: var(--line); stroke-width: 1.5; }
+.n-a { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+.n-w { fill: var(--warm-soft); stroke: var(--warm); stroke-width: 1.5; }
+.n-o { fill: var(--ok-soft); stroke: var(--ok); stroke-width: 1.5; }
+.n-dash { fill: var(--node); stroke: var(--muted); stroke-width: 1.3; stroke-dasharray: 4 3; }
+.bound { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 6 4; }
+.e { fill: none; stroke: var(--muted); stroke-width: 1.6; }
+.e-a { fill: none; stroke: var(--accent); stroke-width: 1.8; }
+.e-w { fill: none; stroke: var(--warm); stroke-width: 1.8; }
+.e-dash { stroke-dasharray: 5 4; }
+.ah { fill: var(--muted); } .ah-a { fill: var(--accent); } .ah-w { fill: var(--warm); }
+.t { fill: var(--fg); font-family: var(--font-body); font-size: 12px; }
+.tb { fill: var(--fg); font-family: var(--font-body); font-size: 14px; font-weight: 700; }
+.ts { fill: var(--muted); font-family: var(--font-body); font-size: 11px; }
+.tm { fill: var(--muted); font-family: var(--font-mono); font-size: 10px; letter-spacing: .04em; }
+.ta { fill: var(--accent); font-family: var(--font-body); font-size: 12px; font-weight: 700; }
+.tw { fill: var(--warm); font-family: var(--font-body); font-size: 12px; font-weight: 700; }
+svg text { dominant-baseline: middle; }
+
+/* lists */
+ul.plain { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 6px; }
+.tasks { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.task { border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; background: var(--panel); font-size: 15px; display: flex; gap: 10px; align-items: flex-start; }
+.task b { font-family: var(--font-mono); color: var(--accent); font-size: 13px; padding-top: 2px; }
+
+/* 1.1 work backward */
+.backward { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; }
+.step { flex: 1 1 150px; min-width: 0; border: 1px solid var(--line); background: var(--node); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 1.55; }
+.step .k { font-family: var(--font-mono); font-size: 11px; color: var(--muted); letter-spacing: .05em; }
+.step.goal { background: var(--ok-soft); border-color: var(--ok); }
+.step.pick { background: var(--accent-soft); border-color: var(--accent); }
+.arrow-row { font-family: var(--font-mono); font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.spectra { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.spec { background: var(--node); border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.spec-title { font-weight: 700; font-size: 14px; }
+.grad { height: 10px; border-radius: 5px; background: linear-gradient(90deg, var(--ok), var(--warm)); }
+.ends { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--muted); }
+.ends span:last-child { text-align: right; }
+.quote { border-left: 3px solid var(--accent); padding: 4px 0 4px 16px; font-size: 17px; }
+.quote small { display: block; color: var(--muted); font-size: 13px; }
+
+/* patterns grid */
+.patterns { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.pat { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.pat h4 { margin: 0; font-size: 16px; display: flex; flex-direction: column; gap: 2px; }
+.pat p { font-size: 14px; line-height: 1.6; }
+.pat .fit { font-size: 13px; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 8px; }
+.pat .fit b { color: var(--fg); font-weight: 500; }
+.pat svg { background: var(--bg); border-radius: 6px; }
+
+.callout { border: 1px solid var(--accent); background: var(--accent-soft); border-radius: 10px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; }
+.callout .eyebrow { color: var(--accent); }
+.callout.warm { border-color: var(--warm); background: var(--warm-soft); }
+.callout.warm .eyebrow { color: var(--warm); }
+
+/* heuristic */
+.vs { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.vs > div { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; min-width: 0; }
+.vs .tag { font-family: var(--font-mono); font-size: 12px; font-weight: 600; }
+.vs .ok .tag { color: var(--ok); } .vs .warm .tag { color: var(--warm); } .vs .accent .tag { color: var(--accent); }
+
+/* cost chips */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font-size: 13px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--warm); color: var(--warm); background: var(--warm-soft); }
+
+/* pillars */
+.pillars { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.pillar { background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--accent); border-radius: 6px; padding: 14px; display: flex; flex-direction: column; gap: 8px; min-width: 0; font-size: 14px; line-height: 1.55; }
+.pillar h4 { margin: 0; font-size: 16px; display: flex; flex-direction: column; }
+.pillar .ev { color: var(--muted); font-size: 13px; border-top: 1px dashed var(--line); padding-top: 8px; }
+.split { display: flex; height: 44px; border-radius: 8px; overflow: hidden; font-size: 13px; font-weight: 500; }
+.split div { display: flex; align-items: center; padding: 0 12px; min-width: 0; white-space: nowrap; overflow: hidden; }
+.split .fast { flex: 9; background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); border-radius: 8px 0 0 8px; }
+.split .slow { flex: 1.6; background: var(--warm-soft); color: var(--warm); border: 1px solid var(--warm); border-left: 0; border-radius: 0 8px 8px 0; justify-content: center; }
+.legend { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+
+/* takeaways */
+.takeaways { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.takeaways li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+.takeaways li::before { content: "✓"; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--ok-soft); color: var(--ok); font-size: 13px; font-weight: 700; margin-top: 3px; }
+
+.source { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; }
+.source a { color: var(--accent); }
+.note { font-size: 14px; color: var(--muted); }
+.c-accent { color: var(--accent); } .c-warm { color: var(--warm); } .c-ok { color: var(--ok); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0 0L10 5L0 10z"/></marker>
+    <marker id="ar-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah-a" d="M0 0L10 5L0 10z"/></marker>
+    <marker id="ar-w" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah-w" d="M0 0L10 5L0 10z"/></marker>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">CCARP · Part II · Domain 2</div>
+  <h1>Claude 모델, 프롬프팅, 컨텍스트 엔지니어링 <span class="en">Claude Models, Prompting &amp; Context Engineering</span></h1>
+  <p class="lead prose">알맞은 모델을 고르고, 모델의 행동을 다듬고, 줄어들며 흐려지는 한정된 자원인 <strong>컨텍스트</strong>를 관리하는 능력.</p>
+  <div class="weight"><div class="weight-bar" role="img" aria-label="시험 비중 13%"><span style="width:13%"></span></div><small>시험 비중 13%</small></div>
+</header>
+
+<section>
+<h2>공식 출제 항목 <span class="en">Official task statements</span></h2>
+<div class="tasks"><div class="task"><b>2.1</b><span>트레이드오프에 따라 알맞은 Claude 모델 선택</span></div><div class="task"><b>2.2</b><span>시스템 프롬프트, 템플릿, 가드레일 설계</span></div><div class="task"><b>2.3</b><span>프롬프트 기법 적용 (제로샷, 퓨샷, 사고의 연쇄)</span></div><div class="task"><b>2.4</b><span>컨텍스트 윈도 최적화와 토큰 사용 관리</span></div><div class="task"><b>2.5</b><span>프롬프트 재사용 전략 (캐싱, 모듈형 프롬프트, Skills)</span></div></div>
+</section>
+<section>
+<h2><span class="no">2.1</span>모델 선택의 트레이드오프 <span class="en">Model selection trade-offs</span></h2>
+<p class="prose">현재 Claude 모델군(2026년 중반 기준)은 능력·지연·비용이 뚜렷한 스펙트럼을 이룹니다. 정확한 가격을 외울 필요는 없지만, <strong>트레이드오프 축</strong>으로 추론할 수 있어야 합니다.</p>
+<div class="fig"><div class="fig-cap">도면 1 · 모델 티어 사다리</div>
+<div class="scroll"><svg class="d" viewBox="0 0 910 240" role="img" aria-label="Haiku, Sonnet, Opus, 프런티어 티어 순으로 능력과 지연이 커지는 계단">
+<path class="e-w" d="M30 220 V24" marker-end="url(#ar-w)"/>
+<text class="tw" x="40" y="22">능력 ↑ 지연 ↑ 비용 ↑</text>
+<rect class="n-o" x="60" y="150" width="200" height="74" rx="6"/>
+<text class="tb" x="76" y="172">Haiku</text>
+<text class="ts" x="76" y="194">가장 빠름 · 200k 토큰</text>
+<text class="ts" x="76" y="212">분류 · 라우팅 · 추출</text>
+<rect class="n-a" x="270" y="117" width="200" height="107" rx="6"/>
+<text class="tb" x="286" y="139">Sonnet</text>
+<text class="ts" x="286" y="161">속도와 지능의 균형 · 최대 1M</text>
+<text class="ts" x="286" y="179">에이전트·코딩 기본 주력</text>
+<path class="e e-dash" d="M160 140 C160 110 200 113 262 113" marker-end="url(#ar)"/>
+<text class="ts" x="150" y="113" text-anchor="end">필요할 때만</text>
+<rect class="n-w" x="480" y="83" width="200" height="141" rx="6"/>
+<text class="tb" x="496" y="105">Opus</text>
+<text class="ts" x="496" y="127">보통 속도 · 최대 1M</text>
+<text class="ts" x="496" y="145">가장 어려운 추론·코딩</text>
+<path class="e e-dash" d="M370 107 C370 77 410 79 472 79" marker-end="url(#ar)"/>
+<text class="ts" x="360" y="79" text-anchor="end">필요할 때만</text>
+<rect class="n-w" x="690" y="50" width="200" height="174" rx="6"/>
+<text class="tb" x="706" y="72">프런티어 (Fable)</text>
+<text class="ts" x="706" y="94">가장 느림 · 1M 토큰</text>
+<text class="ts" x="706" y="112">장기 에이전트 작업</text>
+<path class="e e-dash" d="M580 73 C580 43 620 46 682 46" marker-end="url(#ar)"/>
+<text class="ts" x="570" y="46" text-anchor="end">필요할 때만</text>
+</svg></div>
+</div>
+<p class="note">예시 모델: Haiku 4.5, Sonnet 5, Opus 4.8, Claude Fable. 프런티어 티어는 널리 공개된 가장 강력한 모델로, 오래 도는 에이전트용입니다.</p>
+<h3>이렇게 추론합니다 <span class="en">How to reason</span></h3>
+<div class="callout "><span class="eyebrow">시험의 추론 방식</span>
+<div class="vs"><div class="ok"><span class="tag">→ 가장 작은 모델</span>물량 많음 + 지연 SLA 빡빡함 + 단순한 작업</div><div class="warm"><span class="tag">→ 가장 큰 모델</span>물량 적음 + 위험 큼 + 복잡한 추론</div><div class="accent"><span class="tag">→ 티어 간 라우팅</span>트래픽이 섞여 있음</div></div>
+</div>
+<div class="fig"><div class="fig-cap">도면 2 · 라우터로 티어 나누기</div>
+<svg class="m" viewBox="0 0 351 90" style="max-width:456px" role="img" aria-label="라우터가 쉬운 요청은 Haiku로, 애매하거나 위험이 큰 요청은 Sonnet이나 Opus로 보냄">
+<rect class="n" x="6" y="31" width="42" height="28" rx="6"/>
+<text class="t" x="27" y="45" text-anchor="middle">입력</text>
+<path class="e" d="M48 45 H62" marker-end="url(#ar)"/>
+<rect class="n-o" x="66" y="31" width="54" height="28" rx="6"/>
+<text class="t" x="93" y="45" text-anchor="middle">라우터</text>
+<path class="e" d="M120 45 C137 45 137 24 150 24" marker-end="url(#ar)"/>
+<rect class="n-a" x="154" y="10" width="191" height="28" rx="6"/>
+<text class="t" x="249" y="24" text-anchor="middle">Haiku · 대다수</text>
+<path class="e-w" d="M120 45 C137 45 137 66 150 66" marker-end="url(#ar-w)"/>
+<rect class="n-w" x="154" y="52" width="191" height="28" rx="6"/>
+<text class="t" x="249" y="66" text-anchor="middle">Sonnet/Opus · 에스컬레이션</text>
+</svg>
+</div>
+<p class="prose">비용 대 품질의 "효율적 경계"는 모델 하나에 있는 경우가 드뭅니다.</p>
+<h3>추론 모드 <span class="en">Reasoning mode</span></h3>
+<p class="prose">최신 Claude 모델은 적응형 또는 확장형 사고를 지원해 어려운 문제에 내부 추론 토큰을 더 쓸 수 있습니다. 다단계 추론의 정확도는 오르지만 출력 토큰과 지연이 늘어납니다.</p>
+<div class="callout "><span class="eyebrow">추론 모드를 쓸 때</span>
+<div class="vs"><div class="ok"><span class="tag">적합</span>복잡한 계획, 수학 같은 과제</div><div class="warm"><span class="tag">낭비</span>단순 조회</div></div>
+</div>
+</section>
+<section>
+<h2><span class="no">2.2</span>시스템 프롬프트·템플릿·가드레일 <span class="en">System prompts, templates, and guardrails</span></h2>
+<p class="prose">시스템 프롬프트는 Claude 애플리케이션의 <strong>구조적 제어면</strong>입니다. 잘 설계된 시스템 프롬프트는 보통 아래 순서로 층을 쌓습니다.</p>
+<div class="fig"><div class="fig-cap">도면 3 · 시스템 프롬프트의 층</div>
+<svg class="m" viewBox="0 0 352 92" style="max-width:457px" role="img" aria-label="역할과 목표, 정적 참고 자료, 행동 가드레일, 출력 형식 순서로 쌓이는 시스템 프롬프트">
+<rect class="n" x="6" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="43" y="44" text-anchor="middle">역할·목표</text>
+<path class="e" d="M79 44 H93" marker-end="url(#ar)"/>
+<rect class="n-o" x="97" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="134" y="44" text-anchor="middle">정적 참고</text>
+<path class="e" d="M170 44 H184" marker-end="url(#ar)"/>
+<rect class="n-w" x="188" y="30" width="66" height="28" rx="6"/>
+<text class="t" x="221" y="44" text-anchor="middle">가드레일</text>
+<path class="e" d="M254 44 H268" marker-end="url(#ar)"/>
+<rect class="n-a" x="272" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="309" y="44" text-anchor="middle">출력 형식</text>
+<text class="tm" x="134" y="72" text-anchor="middle">앞쪽 배치 · 캐시</text>
+<text class="tm" x="221" y="72" text-anchor="middle">거절·에스컬레이션</text>
+<text class="tm" x="309" y="72" text-anchor="middle">JSON 스키마 등</text>
+</svg>
+</div>
+<div class="patterns">
+<div class="pat"><h4>역할과 목표 <span class="en">Role and objective</span></h4><p>어시스턴트가 무엇을 위한 것인지 쉬운 말로 씁니다.</p></div>
+<div class="pat"><h4>정적 참고 자료 <span class="en">Static reference material</span></h4><p>정책, 제품 카탈로그, 톤 가이드. 앞쪽에 두고 캐시합니다(2.5).</p></div>
+<div class="pat"><h4>행동 가드레일 <span class="en">Behavioral guardrails</span></h4><p>거절, 에스컬레이션 조건, 톤 경계, 절대 하지 말 일을 명시합니다.</p><div class="fit"><b>예:</b> "환불 금액을 약속하지 않는다. $500 초과는 항상 사람에게 안내한다."</div></div>
+<div class="pat"><h4>출력 형식 제약 <span class="en">Output format constraints</span></h4><p>다운스트림 시스템이 기대하는 정확한 구조(JSON 스키마, 특정 템플릿). 파싱 실패를 줄입니다.</p></div>
+</div>
+<h3>템플릿 <span class="en">Templates</span></h3>
+<p class="prose">변수 자리가 있는 매개변수형 프롬프트입니다. 관련 작업군을 표준화해 일관성을 높이고 프롬프트 캐싱(2.5)도 가능하게 합니다.</p>
+<div class="fig"><div class="fig-cap">도면 4 · 템플릿 하나를 같은 유형 문서에 재사용</div>
+<svg class="m" viewBox="0 0 184 162" style="max-width:239px" role="img" aria-label="문서 요약 템플릿 하나가 같은 유형의 여러 문서에 쓰임">
+<rect class="n-o" x="6" y="62" width="82" height="38" rx="6"/>
+<text class="t" x="47" y="73" text-anchor="middle">템플릿</text>
+<text class="ts" x="47" y="89" text-anchor="middle">문서 X 요약</text>
+<path class="e" d="M88 81 C105 81 105 29 118 29" marker-end="url(#ar)"/>
+<rect class="n-a" x="122" y="10" width="56" height="38" rx="6"/>
+<text class="t" x="150" y="29" text-anchor="middle">문서 1</text>
+<path class="e" d="M88 81 C105 81 105 81 118 81" marker-end="url(#ar)"/>
+<rect class="n-a" x="122" y="62" width="56" height="38" rx="6"/>
+<text class="t" x="150" y="81" text-anchor="middle">문서 2</text>
+<path class="e" d="M88 81 C105 81 105 133 118 133" marker-end="url(#ar)"/>
+<rect class="n-a" x="122" y="114" width="56" height="38" rx="6"/>
+<text class="t" x="150" y="133" text-anchor="middle">문서 3</text>
+</svg>
+</div>
+</section>
+<section>
+<h2><span class="no">2.3</span>프롬프트 엔지니어링 기법 <span class="en">Prompt engineering techniques</span></h2>
+<div class="patterns">
+<div class="pat"><h4>제로샷 <span class="en">Zero-shot</span></h4><svg class="m" viewBox="0 0 191 68" style="max-width:249px" role="img" aria-label="지시만 주고 답을 받음">
+<rect class="n" x="6" y="30" width="42" height="28" rx="6"/>
+<text class="t" x="27" y="44" text-anchor="middle">지시</text>
+<path class="e" d="M48 44 H62" marker-end="url(#ar)"/>
+<rect class="n-a" x="66" y="30" width="61" height="28" rx="6"/>
+<text class="t" x="97" y="44" text-anchor="middle">Claude</text>
+<path class="e" d="M127 44 H141" marker-end="url(#ar)"/>
+<rect class="n" x="145" y="30" width="40" height="28" rx="6"/>
+<text class="t" x="165" y="44" text-anchor="middle">답</text>
+</svg><p>지시만 주고 예시는 없습니다.</p><div class="fit"><b>적합:</b> 일반 학습만으로 패턴이 충분히 커버되는 단순하고 익숙한 작업</div></div>
+<div class="pat"><h4>퓨샷 <span class="en">Few-shot</span></h4><svg class="m" viewBox="0 0 202 78" style="max-width:263px" role="img" aria-label="지시와 예시를 주고 답을 받음">
+<rect class="n-o" x="6" y="30" width="53" height="38" rx="6"/>
+<text class="t" x="33" y="41" text-anchor="middle">지시</text>
+<text class="ts" x="33" y="57" text-anchor="middle">+ 예시</text>
+<path class="e" d="M59 49 H73" marker-end="url(#ar)"/>
+<rect class="n-a" x="77" y="30" width="61" height="38" rx="6"/>
+<text class="t" x="108" y="49" text-anchor="middle">Claude</text>
+<path class="e" d="M138 49 H152" marker-end="url(#ar)"/>
+<rect class="n" x="156" y="30" width="40" height="38" rx="6"/>
+<text class="t" x="176" y="49" text-anchor="middle">답</text>
+</svg><p>지시에 고품질 입출력 예시를 몇 개 더합니다.</p><div class="fit"><b>적합:</b> 원하는 형식, 엣지 케이스, 모델이 스스로 추론하지 못할 하우스 스타일. Anthropic 가이드는 캐싱으로 저렴해진 다양한 고품질 예시 20개 이상이 2~3개보다 나은 경우가 많다고 봅니다.</div></div>
+<div class="pat"><h4>사고의 연쇄 <span class="en">Chain-of-thought (CoT)</span></h4><svg class="m" viewBox="0 0 215 68" style="max-width:280px" role="img" aria-label="단계별로 추론한 뒤 답을 냄">
+<rect class="n" x="6" y="30" width="42" height="28" rx="6"/>
+<text class="t" x="27" y="44" text-anchor="middle">지시</text>
+<path class="e" d="M48 44 H62" marker-end="url(#ar)"/>
+<rect class="n-w" x="66" y="30" width="85" height="28" rx="6"/>
+<text class="t" x="109" y="44" text-anchor="middle">단계별 추론</text>
+<path class="e" d="M151 44 H165" marker-end="url(#ar)"/>
+<rect class="n" x="169" y="30" width="40" height="28" rx="6"/>
+<text class="t" x="189" y="44" text-anchor="middle">답</text>
+</svg><p>답하기 전에 단계별로 추론하라고 지시하거나, 확정 전에 "생각할" 공간을 줍니다.</p><div class="fit"><b>적합:</b> 다단계 추론, 수학, 계획. 그럴듯하지만 틀린 답으로 건너뛰기 쉬운 곳</div></div>
+</div>
+<div class="callout "><span class="eyebrow">사고 기능과 CoT 프롬프트</span>
+<p class="prose">최신 Claude 모델에서는 구조적 추론이 프롬프트 요령이 아니라 <strong>일급 기능</strong>(적응형/확장형 사고)으로 제공됩니다. 그래도 "단계별로 생각해" 같은 고전적 CoT 프롬프트는 그 기능이 꺼진 모델·모드에서, 그리고 검토자가 추론 과정을 감사할 수 있게 만들 때 여전히 유용합니다.</p>
+</div>
+</section>
+<section>
+<h2><span class="no">2.4</span>컨텍스트 윈도와 토큰 관리 <span class="en">Context window optimization and token management</span></h2>
+<p class="prose">컨텍스트 윈도는 필요할지 모르는 모든 것을 쏟아 넣는 곳이 아니라 <strong>작업 기억의 예산</strong>입니다. 이 영역을 받치는 사실이 두 가지 있습니다.</p>
+<div class="pillars"><div class="pillar"><h4>컨텍스트 부패 <span class="en">Context rot</span></h4><span>명목상 한도 안에서도 토큰이 늘수록 정확도와 회상이 떨어집니다. 더 많은 컨텍스트가 곧 더 좋은 것은 아닙니다. 무엇을 넣을지 가려내는 일이 남은 공간만큼 중요합니다.</span><span class="ev">큐레이션</span></div><div class="pillar"><h4>전부 센다 <span class="en">Everything counts</span></h4><span>시스템 프롬프트, 모든 메시지(도구 결과·이미지·문서 포함), 도구 정의, 모델 자신의 출력(사고 토큰 포함)이 모두 윈도를 차지합니다.</span><span class="ev">윈도 전체</span></div></div>
+<h3>최적화 수단 <span class="en">Practical levers</span></h3>
+<div class="patterns">
+<div class="pat"><h4>요약·압축 <span class="en">Summarization / compaction</span></h4><svg class="m" viewBox="0 0 258 68" style="max-width:335px" role="img" aria-label="오래된 대화가 요약으로 줄어듦">
+<rect class="n" x="6" y="30" width="61" height="28" rx="6"/>
+<text class="t" x="37" y="44" text-anchor="middle">긴 이력</text>
+<path class="e" d="M67 44 H81" marker-end="url(#ar)"/>
+<rect class="n-a" x="85" y="30" width="42" height="28" rx="6"/>
+<text class="t" x="106" y="44" text-anchor="middle">요약</text>
+<path class="e" d="M127 44 H141" marker-end="url(#ar)"/>
+<rect class="n-o" x="145" y="30" width="107" height="28" rx="6"/>
+<text class="t" x="199" y="44" text-anchor="middle">요약 + 최근 턴</text>
+</svg><p>오래된 턴을 주기적으로 짧은 요약으로 접습니다. 서버 측 기능으로 제공되는 경우가 늘고 있어 직접 만들 필요가 줄었습니다.</p></div>
+<div class="pat"><h4>컨텍스트·도구 결과 편집 <span class="en">Context / tool-result editing</span></h4><svg class="m" viewBox="0 0 293 118" style="max-width:381px" role="img" aria-label="역할을 마친 도구 결과를 컨텍스트에서 지움">
+<rect class="n" x="6" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="43" y="44" text-anchor="middle">도구 결과</text>
+<path class="e" d="M79 44 H93" marker-end="url(#ar)"/>
+<path class="n-o" d="M134 26 L172 44 L134 62 L97 44 Z"/>
+<text class="t" x="134" y="44" text-anchor="middle">역할 끝?</text>
+<path class="e" d="M172 44 H186" marker-end="url(#ar)"/>
+<rect class="n-o" x="190" y="30" width="97" height="28" rx="6"/>
+<text class="t" x="238" y="44" text-anchor="middle">컨텍스트 유지</text>
+<path class="e-w" d="M134 62 V84" marker-end="url(#ar-w)"/>
+<text class="ts" x="134" y="98" text-anchor="middle">낡은 결과 삭제</text>
+</svg><p>쓰임이 끝난 낡은 도구 결과나 대체된 중간 출력을 컨텍스트에서 지웁니다.</p></div>
+<div class="pat"><h4>쑤셔 넣지 말고 검색 <span class="en">Retrieval instead of stuffing</span></h4><svg class="m" viewBox="0 0 233 48" style="max-width:303px" role="img" aria-label="지식 베이스에서 관련 조각만 검색해 보냄">
+<rect class="n" x="6" y="10" width="42" height="28" rx="6"/>
+<text class="t" x="27" y="24" text-anchor="middle">요청</text>
+<path class="e" d="M48 24 H62" marker-end="url(#ar)"/>
+<rect class="n-o" x="66" y="10" width="42" height="28" rx="6"/>
+<text class="t" x="87" y="24" text-anchor="middle">검색</text>
+<path class="e" d="M108 24 C125 24 125 24 138 24" marker-end="url(#ar)"/>
+<rect class="n-a" x="142" y="10" width="85" height="28" rx="6"/>
+<text class="t" x="185" y="24" text-anchor="middle">관련 조각만</text>
+</svg><p>큰 지식 베이스는 요청마다 관련된 조각만 가져옵니다. 코퍼스 전체를 매번 붙이지 않습니다(Domain 3의 RAG).</p></div>
+<div class="pat"><h4>전송 전 토큰 세기 <span class="en">Token counting before sending</span></h4><svg class="m" viewBox="0 0 329 118" style="max-width:427px" role="img" aria-label="요청을 보내기 전에 토큰 수를 세어 예산 안인지 확인">
+<rect class="n" x="6" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="43" y="44" text-anchor="middle">요청 초안</text>
+<path class="e" d="M79 44 H93" marker-end="url(#ar)"/>
+<rect class="n-o" x="97" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="134" y="44" text-anchor="middle">토큰 세기</text>
+<path class="e" d="M170 44 H184" marker-end="url(#ar)"/>
+<path class="n-o" d="M226 26 L263 44 L226 62 L188 44 Z"/>
+<text class="t" x="226" y="44" text-anchor="middle">예산 안?</text>
+<path class="e" d="M263 44 H277" marker-end="url(#ar)"/>
+<rect class="n" x="281" y="30" width="42" height="28" rx="6"/>
+<text class="t" x="302" y="44" text-anchor="middle">전송</text>
+<path class="e-w" d="M226 62 V84" marker-end="url(#ar-w)"/>
+<text class="ts" x="226" y="98" text-anchor="middle">넘으면 줄이기</text>
+</svg><p>요청 전에 사용량을 추정해 예산을 지키고, 런타임에 넘치고서 알아차리는 일을 피합니다.</p></div>
+</div>
+</section>
+<section>
+<h2><span class="no">2.5</span>프롬프트 재사용 <span class="en">Prompt reuse: caching, modular prompts, and Skills</span></h2>
+<h3>프롬프트 캐싱 <span class="en">Prompt caching</span></h3>
+<p class="prose">아키텍트가 쥔 비용·지연 지렛대 중 <strong>가장 효과가 큰 것</strong>입니다. 변하지 않는 앞부분(시스템 지시, 정적 참고 문서, 도구 정의)을 캐시 대상으로 표시하면, 반복 요청이 이미 처리된 앞부분을 다시 처리하지 않고 재사용합니다. 비용(캐시 읽기는 새 입력 토큰의 작은 일부만 청구)과 첫 토큰까지의 시간이 함께 줄어듭니다.</p>
+<div class="fig"><div class="fig-cap">도면 5 · 정적 내용을 앞에, 캐시 경계는 마지막 동일 블록에</div>
+<svg class="m" viewBox="0 0 492 96" style="max-width:640px" role="img" aria-label="정적 내용 뒤에 캐시 경계를 두고 그 뒤에 요청마다 바뀌는 내용을 놓음">
+<rect class="n-o" x="6" y="30" width="85" height="28" rx="6"/>
+<text class="t" x="49" y="44" text-anchor="middle">시스템 지시</text>
+<path class="e" d="M91 44 H105" marker-end="url(#ar)"/>
+<rect class="n-o" x="109" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="146" y="44" text-anchor="middle">정적 문서</text>
+<path class="e" d="M182 44 H196" marker-end="url(#ar)"/>
+<rect class="n-o" x="200" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="237" y="44" text-anchor="middle">도구 정의</text>
+<path class="e" d="M274 44 H288" marker-end="url(#ar)"/>
+<path class="n-o" d="M331 26 L371 44 L331 62 L292 44 Z"/>
+<text class="t" x="331" y="44" text-anchor="middle">캐시 경계</text>
+<path class="e" d="M371 44 H385" marker-end="url(#ar)"/>
+<rect class="n-w" x="389" y="30" width="97" height="28" rx="6"/>
+<text class="t" x="437" y="44" text-anchor="middle">사용자 메시지</text>
+<text class="tm" x="331" y="76" text-anchor="middle">마지막 동일 블록 뒤</text>
+<text class="tm" x="437" y="72" text-anchor="middle">요청마다 바뀜</text>
+</svg>
+</div>
+<div class="callout warm"><span class="eyebrow">시험의 설계 규칙</span>
+<p class="prose"><strong>정적 내용을 먼저 두고</strong>, 캐시를 공유하려는 요청들 사이에 계속 동일한 마지막 블록에 캐시 경계를 둡니다. 요청마다 바뀌는 내용(타임스탬프, 실시간 사용자 메시지)에 경계를 두면 캐시 적중이 없고, 조용히 비용이 <strong>줄지 않고 늘어납니다</strong>.</p>
+</div>
+<div class="patterns">
+<div class="pat"><h4>모듈형 프롬프트 <span class="en">Modular prompts</span></h4><svg class="m" viewBox="0 0 237 132" style="max-width:308px" role="img" aria-label="페르소나, 작업, 출력 형식 블록을 요청마다 조립">
+<rect class="n" x="6" y="52" width="42" height="28" rx="6"/>
+<text class="t" x="27" y="66" text-anchor="middle">요청</text>
+<path class="e" d="M48 66 C65 66 65 24 78 24" marker-end="url(#ar)"/>
+<rect class="n-a" x="82" y="10" width="73" height="28" rx="6"/>
+<text class="t" x="119" y="24" text-anchor="middle">페르소나</text>
+<path class="e" d="M48 66 C65 66 65 66 78 66" marker-end="url(#ar)"/>
+<rect class="n-a" x="82" y="52" width="73" height="28" rx="6"/>
+<text class="t" x="119" y="66" text-anchor="middle">작업별</text>
+<path class="e" d="M48 66 C65 66 65 108 78 108" marker-end="url(#ar)"/>
+<rect class="n-a" x="82" y="94" width="73" height="28" rx="6"/>
+<text class="t" x="119" y="108" text-anchor="middle">출력 형식</text>
+<path class="e" d="M155 24 C172 24 172 66 185 66" marker-end="url(#ar)"/>
+<path class="e" d="M155 66 C172 66 172 66 185 66" marker-end="url(#ar)"/>
+<path class="e" d="M155 108 C172 108 172 66 185 66" marker-end="url(#ar)"/>
+<rect class="n-o" x="189" y="52" width="42" height="28" rx="6"/>
+<text class="t" x="210" y="66" text-anchor="middle">조립</text>
+</svg><p>큰 지시 묶음을 조합 가능한 조각(핵심 페르소나, 작업별, 출력 형식)으로 나눠 요청마다 조립합니다. 통짜 문자열보다 유지·테스트·독립 캐싱이 쉽습니다.</p></div>
+<div class="pat"><h4>Skills <span class="en">Skills</span></h4><svg class="m" viewBox="0 0 281 132" style="max-width:366px" role="img" aria-label="관련 있는 스킬만 필요할 때 로드">
+<rect class="n" x="6" y="52" width="42" height="28" rx="6"/>
+<text class="t" x="27" y="66" text-anchor="middle">요청</text>
+<path class="e" d="M48 66 H62" marker-end="url(#ar)"/>
+<rect class="n-o" x="66" y="52" width="73" height="28" rx="6"/>
+<text class="t" x="103" y="66" text-anchor="middle">스킬 탐색</text>
+<path class="e" d="M139 66 C156 66 156 24 169 24" marker-end="url(#ar)"/>
+<rect class="n-o" x="173" y="10" width="102" height="28" rx="6"/>
+<text class="t" x="224" y="24" text-anchor="middle">스킬 A · 로드</text>
+<path class="e" d="M139 66 C156 66 156 66 169 66" marker-end="url(#ar)"/>
+<rect class="n-dash" x="173" y="52" width="102" height="28" rx="6"/>
+<text class="t" x="224" y="66" text-anchor="middle">스킬 B</text>
+<path class="e" d="M139 66 C156 66 156 108 169 108" marker-end="url(#ar)"/>
+<rect class="n-dash" x="173" y="94" width="102" height="28" rx="6"/>
+<text class="t" x="224" y="108" text-anchor="middle">스킬 C</text>
+</svg><p>지시, 스크립트, 참고 파일로 이루어진 재사용 절차 지식 묶음. Claude가 찾아서 <strong>관련될 때만</strong> 불러옵니다. 모든 기능의 지시를 항상 컨텍스트에 두지 않습니다.</p><div class="fit"><b>원리:</b> 점진적 공개. 필요할 때 기능을 불러오고 처음부터 전부 올리지 않습니다(Domain 3의 도구·컨텍스트 전략).</div></div>
+</div>
+</section>
+<section>
+<h2>핵심 정리 <span class="en">Key takeaways: Domain 2</span></h2>
+<ul class="takeaways"><li><span>모델 선택은 능력·지연·비용의 트레이드오프다. 모든 일에 모델 하나를 쓰지 말고 <strong>티어 사이로 라우팅</strong>한다.</span></li><li><span>시스템 프롬프트가 주된 제어면이다. 순서는 역할, 참고 자료, 가드레일, 출력 형식.</span></li><li><span>작업에 맞는 기법을 쓴다. 단순·익숙한 일은 제로샷, 형식·스타일 정밀도는 퓨샷, 다단계 추론은 사고의 연쇄.</span></li><li><span>컨텍스트는 줄어드는 자원("컨텍스트 부패")이다. 적극적으로 가려내고, 압축·컨텍스트 편집·검색을 쓰며 쑤셔 넣지 않는다.</span></li><li><span>프롬프트 캐싱은 뒤늦게 붙이는 기능이 아니라 설계 결정이다. 정적 우선 배치와 안정적인 캐시 경계가 실제 이득을 만든다.</span></li></ul>
+</section>
+
+<p class="source">원문: <a href="https://amitj.me/claude/course/ccarp/2/#page-d2">CCARP 코스 · Domain 2</a> 페이지 내용만 한국어로 정리하고 도식화했습니다.</p>
+
+</div>

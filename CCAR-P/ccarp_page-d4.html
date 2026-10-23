@@ -1,0 +1,489 @@
+<title>평가·테스트·최적화</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: 설계 도면(blueprint) 노트 — 좁은 본문 열 + 모눈 도면 패널. 섹션 번호는 원문 번호 그대로.
+   build_page.py가 이 파일을 <style>에 그대로 넣는다. 색은 모두 토큰으로만 쓴다(라이트/다크 자동). */
+:root {
+  --bg: #f5f7fa;
+  --panel: #ffffff;
+  --fg: #18212e;
+  --muted: #5a6779;
+  --line: #c9d2de;
+  --grid: #e6ebf2;
+  --accent: #2456c9;
+  --accent-soft: #e4ecfb;
+  --warm: #b8621b;
+  --warm-soft: #fbeedf;
+  --ok: #2f7d4f;
+  --ok-soft: #e2f2e8;
+  --node: #ffffff;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f141c; --panel: #161d28; --fg: #e3e8ef; --muted: #96a3b5; --line: #334155; --grid: #1e2734;
+    --accent: #7ea6ff; --accent-soft: #1c2a47; --warm: #f0a35e; --warm-soft: #3a2816;
+    --ok: #6cc892; --ok-soft: #173526; --node: #1b2431; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f141c; --panel: #161d28; --fg: #e3e8ef; --muted: #96a3b5; --line: #334155; --grid: #1e2734;
+  --accent: #7ea6ff; --accent-soft: #1c2a47; --warm: #f0a35e; --warm-soft: #3a2816;
+  --ok: #6cc892; --ok-soft: #173526; --node: #1b2431; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.75;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 80px;
+  word-break: keep-all; overflow-wrap: anywhere;
+}
+.wrap { max-width: 920px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+.prose { max-width: 680px; }
+h1, h2, h3 { text-wrap: balance; line-height: 1.35; margin: 0; }
+h1 { font-size: clamp(28px, 5vw, 40px); font-weight: 700; }
+h2 { font-size: 24px; font-weight: 700; display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+h2 .no { font-family: var(--font-mono); font-size: 15px; color: var(--accent); font-weight: 600; }
+h3 { font-size: 18px; font-weight: 700; }
+p { margin: 0; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.en { font-family: var(--font-mono); font-size: .78em; color: var(--muted); font-weight: 400; }
+section { display: flex; flex-direction: column; gap: 18px; }
+.lead { font-size: 18px; color: var(--muted); }
+
+/* header */
+header { display: flex; flex-direction: column; gap: 14px; }
+.weight { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.weight-bar { width: 220px; max-width: 100%; height: 10px; border-radius: 5px; background: var(--grid); overflow: hidden; }
+.weight-bar span { display: block; height: 100%; background: var(--accent); }
+.weight small { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+
+/* blueprint panel */
+.fig {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+  padding: 20px; display: flex; flex-direction: column; gap: 14px;
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 24px 24px; background-position: -1px -1px;
+}
+.fig-cap { font-family: var(--font-mono); font-size: 12px; color: var(--muted); letter-spacing: .04em; }
+.scroll { overflow-x: auto; }
+svg.d { display: block; width: 100%; height: auto; min-width: 560px; }
+svg.m { display: block; width: 100%; height: auto; }
+
+/* svg styling */
+.n { fill: var(--node); stroke: var(--line); stroke-width: 1.5; }
+.n-a { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+.n-w { fill: var(--warm-soft); stroke: var(--warm); stroke-width: 1.5; }
+.n-o { fill: var(--ok-soft); stroke: var(--ok); stroke-width: 1.5; }
+.n-dash { fill: var(--node); stroke: var(--muted); stroke-width: 1.3; stroke-dasharray: 4 3; }
+.bound { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 6 4; }
+.e { fill: none; stroke: var(--muted); stroke-width: 1.6; }
+.e-a { fill: none; stroke: var(--accent); stroke-width: 1.8; }
+.e-w { fill: none; stroke: var(--warm); stroke-width: 1.8; }
+.e-dash { stroke-dasharray: 5 4; }
+.ah { fill: var(--muted); } .ah-a { fill: var(--accent); } .ah-w { fill: var(--warm); }
+.t { fill: var(--fg); font-family: var(--font-body); font-size: 12px; }
+.tb { fill: var(--fg); font-family: var(--font-body); font-size: 14px; font-weight: 700; }
+.ts { fill: var(--muted); font-family: var(--font-body); font-size: 11px; }
+.tm { fill: var(--muted); font-family: var(--font-mono); font-size: 10px; letter-spacing: .04em; }
+.ta { fill: var(--accent); font-family: var(--font-body); font-size: 12px; font-weight: 700; }
+.tw { fill: var(--warm); font-family: var(--font-body); font-size: 12px; font-weight: 700; }
+svg text { dominant-baseline: middle; }
+
+/* lists */
+ul.plain { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 6px; }
+.tasks { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.task { border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; background: var(--panel); font-size: 15px; display: flex; gap: 10px; align-items: flex-start; }
+.task b { font-family: var(--font-mono); color: var(--accent); font-size: 13px; padding-top: 2px; }
+
+/* 1.1 work backward */
+.backward { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; }
+.step { flex: 1 1 150px; min-width: 0; border: 1px solid var(--line); background: var(--node); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 1.55; }
+.step .k { font-family: var(--font-mono); font-size: 11px; color: var(--muted); letter-spacing: .05em; }
+.step.goal { background: var(--ok-soft); border-color: var(--ok); }
+.step.pick { background: var(--accent-soft); border-color: var(--accent); }
+.arrow-row { font-family: var(--font-mono); font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.spectra { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.spec { background: var(--node); border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.spec-title { font-weight: 700; font-size: 14px; }
+.grad { height: 10px; border-radius: 5px; background: linear-gradient(90deg, var(--ok), var(--warm)); }
+.ends { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--muted); }
+.ends span:last-child { text-align: right; }
+.quote { border-left: 3px solid var(--accent); padding: 4px 0 4px 16px; font-size: 17px; }
+.quote small { display: block; color: var(--muted); font-size: 13px; }
+
+/* patterns grid */
+.patterns { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.pat { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.pat h4 { margin: 0; font-size: 16px; display: flex; flex-direction: column; gap: 2px; }
+.pat p { font-size: 14px; line-height: 1.6; }
+.pat .fit { font-size: 13px; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 8px; }
+.pat .fit b { color: var(--fg); font-weight: 500; }
+.pat svg { background: var(--bg); border-radius: 6px; }
+
+.callout { border: 1px solid var(--accent); background: var(--accent-soft); border-radius: 10px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; }
+.callout .eyebrow { color: var(--accent); }
+.callout.warm { border-color: var(--warm); background: var(--warm-soft); }
+.callout.warm .eyebrow { color: var(--warm); }
+
+/* heuristic */
+.vs { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.vs > div { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; min-width: 0; }
+.vs .tag { font-family: var(--font-mono); font-size: 12px; font-weight: 600; }
+.vs .ok .tag { color: var(--ok); } .vs .warm .tag { color: var(--warm); } .vs .accent .tag { color: var(--accent); }
+
+/* cost chips */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font-size: 13px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--warm); color: var(--warm); background: var(--warm-soft); }
+
+/* pillars */
+.pillars { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.pillar { background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--accent); border-radius: 6px; padding: 14px; display: flex; flex-direction: column; gap: 8px; min-width: 0; font-size: 14px; line-height: 1.55; }
+.pillar h4 { margin: 0; font-size: 16px; display: flex; flex-direction: column; }
+.pillar .ev { color: var(--muted); font-size: 13px; border-top: 1px dashed var(--line); padding-top: 8px; }
+.split { display: flex; height: 44px; border-radius: 8px; overflow: hidden; font-size: 13px; font-weight: 500; }
+.split div { display: flex; align-items: center; padding: 0 12px; min-width: 0; white-space: nowrap; overflow: hidden; }
+.split .fast { flex: 9; background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); border-radius: 8px 0 0 8px; }
+.split .slow { flex: 1.6; background: var(--warm-soft); color: var(--warm); border: 1px solid var(--warm); border-left: 0; border-radius: 0 8px 8px 0; justify-content: center; }
+.legend { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+
+/* takeaways */
+.takeaways { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.takeaways li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+.takeaways li::before { content: "✓"; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--ok-soft); color: var(--ok); font-size: 13px; font-weight: 700; margin-top: 3px; }
+
+.source { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; }
+.source a { color: var(--accent); }
+.note { font-size: 14px; color: var(--muted); }
+.c-accent { color: var(--accent); } .c-warm { color: var(--warm); } .c-ok { color: var(--ok); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0 0L10 5L0 10z"/></marker>
+    <marker id="ar-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah-a" d="M0 0L10 5L0 10z"/></marker>
+    <marker id="ar-w" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah-w" d="M0 0L10 5L0 10z"/></marker>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">CCA-F 코스 · Part 2 · Domain 4</div>
+  <h1>평가, 테스트, 최적화 <span class="en">Evaluation, Testing & Optimization</span></h1>
+  <p class="lead prose">시스템이 잘 작동함을 <strong>증명</strong>하고, 사용자보다 먼저 회귀를 잡고, 추측 대신 <strong>올바른 층에서 원인을 진단</strong>하는 능력입니다.</p>
+  <div class="weight"><div class="weight-bar" role="img" aria-label="시험 비중 16%"><span style="width:16%"></span></div><small>시험 비중 16%</small></div>
+</header>
+
+<section>
+<h2>공식 출제 항목 <span class="en">Official task statements</span></h2>
+<div class="tasks"><div class="task"><b>4.1</b><span>평가 지표 정의 (정확도, 지연 시간, 비용, 안전, 보안)</span></div><div class="task"><b>4.2</b><span>혼합 방법론으로 평가 데이터셋과 테스트 프레임워크 설계</span></div><div class="task"><b>4.3</b><span>A/B 테스트와 반복 개선</span></div><div class="task"><b>4.4</b><span>시스템 문제 진단 (프롬프트 실패, 환각, 모델 불일치)</span></div><div class="task"><b>4.5</b><span>토큰 사용량, 지연 시간, 비용 대비 성능 최적화</span></div><div class="task"><b>4.6</b><span>로깅과 관측성 도구로 성능 모니터링</span></div></div>
+</section>
+<section>
+<h2><span class="no">4.1</span>평가 지표 정의 <span class="en">Defining evaluation metrics</span></h2>
+<p class="prose">"좋은가?"는 지표가 아닙니다. 운영 수준의 평가 계획은 사용 사례마다 <strong>최소 다섯 가지 차원</strong>에서 구체적이고 측정 가능한 목표를 정합니다.</p>
+<div class="fig"><div class="fig-cap">도면 1 · 평가의 다섯 차원</div>
+<svg class="m" viewBox="0 0 192 216" style="max-width:250px" role="img" aria-label="평가 계획이 정확도, 지연 시간, 비용, 안전, 보안의 다섯 차원으로 갈라진다.">
+<rect class="n-o" x="6" y="94" width="73" height="28" rx="6"/>
+<text class="t" x="43" y="108" text-anchor="middle">평가 계획</text>
+<path class="e" d="M79 108 C96 108 96 24 109 24" marker-end="url(#ar)"/>
+<rect class="n-a" x="113" y="10" width="73" height="28" rx="6"/>
+<text class="t" x="150" y="24" text-anchor="middle">정확도</text>
+<path class="e" d="M79 108 C96 108 96 66 109 66" marker-end="url(#ar)"/>
+<rect class="n-a" x="113" y="52" width="73" height="28" rx="6"/>
+<text class="t" x="150" y="66" text-anchor="middle">지연 시간</text>
+<path class="e" d="M79 108 C96 108 96 108 109 108" marker-end="url(#ar)"/>
+<rect class="n-a" x="113" y="94" width="73" height="28" rx="6"/>
+<text class="t" x="150" y="108" text-anchor="middle">비용</text>
+<path class="e" d="M79 108 C96 108 96 150 109 150" marker-end="url(#ar)"/>
+<rect class="n-w" x="113" y="136" width="73" height="28" rx="6"/>
+<text class="t" x="150" y="150" text-anchor="middle">안전</text>
+<path class="e" d="M79 108 C96 108 96 192 109 192" marker-end="url(#ar)"/>
+<rect class="n-w" x="113" y="178" width="73" height="28" rx="6"/>
+<text class="t" x="150" y="192" text-anchor="middle">보안</text>
+</svg>
+</div>
+<div class="pillars"><div class="pillar"><h4>정확도 / 품질 <span class="en">Accuracy / quality</span></h4><span>정답 데이터에 대한 완전 일치 또는 등급 평가, 작업 완료율, 근거성(모든 주장이 검색된 출처로 추적되는가).</span><span class="ev">지표: 정답률 · 완료율 · groundedness</span></div><div class="pillar"><h4>지연 시간 <span class="en">Latency</span></h4><span>SLA에 맞춰 첫 토큰까지의 시간과 완료까지의 시간을 P50/P95/P99로 본다.</span><span class="ev">지표: P50 · P95 · P99</span></div><div class="pillar"><h4>비용 <span class="en">Cost</span></h4><span>요청당 비용, 해결한 작업당 비용, 월 추론 총지출과 예산 비교.</span><span class="ev">지표: $/요청 · $/해결 · 월 지출</span></div><div class="pillar"><h4>안전 <span class="en">Safety</span></h4><span>유해, 편향, 정책 위반 출력 비율. 가드레일이 발동하는 비율과 잘못 발동하는 비율.</span><span class="ev">지표: 위반율 · 가드레일 오탐율</span></div><div class="pillar"><h4>보안 <span class="en">Security</span></h4><span>레드팀에서 프롬프트 인젝션·탈옥 시도가 성공하지 못하고 걸러진 비율, 무단 데이터 접근 시도 차단율.</span><span class="ev">지표: 인젝션 차단율 · 무단 접근 차단율</span></div></div>
+<div class="callout warm"><span class="eyebrow">먼저 정할 것</span>
+<p class="prose">지표마다 <strong>목표(target)와 하한선(floor)</strong>을 만들기 전에 정합니다. 그렇지 않으면 "더 좋다"의 기준이 없어서 이해관계자마다 서로 다른 암묵적 기준으로 다툽니다.</p>
+</div>
+<h3>알아야 할 정량 지표 <span class="en">Quantitative metrics</span></h3>
+<p class="prose">분류·추출 작업에서는 정보 검색의 기본 네 지표를 알아야 합니다. 불균형 데이터에서는 <strong>정확도만으로는 오해</strong>하기 쉽기 때문입니다.</p>
+<div class="fig"><div class="fig-cap">도면 2 · 정밀도와 재현율, 하나로 합치기</div>
+<svg class="m" viewBox="0 0 285 110" style="max-width:370px" role="img" aria-label="정밀도와 재현율이 F1으로 합쳐진다.">
+<rect class="n" x="6" y="36" width="85" height="38" rx="6"/>
+<text class="t" x="49" y="55" text-anchor="middle">시스템 출력</text>
+<path class="e" d="M91 55 C108 55 108 29 121 29" marker-end="url(#ar)"/>
+<rect class="n-a" x="125" y="10" width="80" height="38" rx="6"/>
+<text class="t" x="165" y="21" text-anchor="middle">정밀도</text>
+<text class="ts" x="165" y="37" text-anchor="middle">오탐이 적다</text>
+<path class="e" d="M91 55 C108 55 108 81 121 81" marker-end="url(#ar)"/>
+<rect class="n-a" x="125" y="62" width="80" height="38" rx="6"/>
+<text class="t" x="165" y="73" text-anchor="middle">재현율</text>
+<text class="ts" x="165" y="89" text-anchor="middle">누락이 적다</text>
+<path class="e" d="M205 29 C222 29 222 55 235 55" marker-end="url(#ar)"/>
+<path class="e" d="M205 81 C222 81 222 55 235 55" marker-end="url(#ar)"/>
+<rect class="n-o" x="239" y="36" width="40" height="38" rx="6"/>
+<text class="t" x="259" y="55" text-anchor="middle">F1</text>
+<text class="tm" x="259" y="88" text-anchor="middle">조화평균</text>
+</svg>
+</div>
+<div class="pillars"><div class="pillar"><h4>정밀도 <span class="en">Precision</span></h4><span>시스템이 표시·반환한 항목 중 맞은 비율. 높으면 거짓 양성이 적다.</span><span class="ev">맞은 것 ÷ 반환한 것</span></div><div class="pillar"><h4>재현율 <span class="en">Recall</span></h4><span>잡아야 했던 항목 중 실제로 잡은 비율. 높으면 거짓 음성이 적다.</span><span class="ev">잡은 것 ÷ 잡아야 했던 것</span></div><div class="pillar"><h4>F1 <span class="en">F1</span></h4><span>정밀도와 재현율의 조화평균. 둘의 균형을 숫자 하나로 볼 때 쓴다.</span><span class="ev">단일 균형 지표</span></div><div class="pillar"><h4>정확도 <span class="en">Accuracy</span></h4><span>전체 예측 중 맞은 비율. 클래스가 불균형하면 믿을 수 없다. "항상 사기 아님"이라 답하는 모델은 사기가 1%인 데이터에서 정확도 99%지만 쓸모가 없다.</span><span class="ev">불균형 데이터에서 주의</span></div></div>
+<h3>RAG 검색 품질 <span class="en">RAG retrieval quality</span></h3>
+<p class="prose">RAG는 <strong>검색 단계와 생성 단계를 따로</strong> 평가합니다. 검색은 precision@k / recall@k(상위 k개에 맞는 청크가 있는가), 생성은 근거성·충실도(답이 검색된 청크에서 나왔고 지어낸 내용이 없는가), 그리고 답변 관련성(질문에 답하는가)으로 봅니다.</p>
+<div class="fig"><div class="fig-cap">도면 3 · RAG 실패는 어느 단계에서 깨졌나</div>
+<svg class="m" viewBox="0 0 249 162" style="max-width:324px" role="img" aria-label="RAG 실패는 검색, 근거성, 관련성 세 가지 중 하나에서 깨진다.">
+<rect class="n-w" x="6" y="62" width="71" height="38" rx="6"/>
+<text class="t" x="41" y="81" text-anchor="middle">RAG 실패</text>
+<path class="e" d="M77 81 C94 81 94 29 107 29" marker-end="url(#ar)"/>
+<rect class="n-a" x="111" y="10" width="132" height="38" rx="6"/>
+<text class="t" x="177" y="21" text-anchor="middle">검색</text>
+<text class="ts" x="177" y="37" text-anchor="middle">엉뚱한 청크</text>
+<path class="e" d="M77 81 C94 81 94 81 107 81" marker-end="url(#ar)"/>
+<rect class="n-a" x="111" y="62" width="132" height="38" rx="6"/>
+<text class="t" x="177" y="73" text-anchor="middle">근거성</text>
+<text class="ts" x="177" y="89" text-anchor="middle">맞는 청크, 지어낸 답</text>
+<path class="e" d="M77 81 C94 81 94 133 107 133" marker-end="url(#ar)"/>
+<rect class="n-a" x="111" y="114" width="132" height="38" rx="6"/>
+<text class="t" x="177" y="125" text-anchor="middle">관련성</text>
+<text class="ts" x="177" y="141" text-anchor="middle">맞지만 주제 이탈</text>
+</svg>
+</div>
+<h3>비용 계산 예시: 캐싱 ROI <span class="en">A worked cost calculation</span></h3>
+<div class="callout "><span class="eyebrow">시나리오</span>
+<p class="prose">하루 요청 100,000건. 요청마다 정적 시스템 프롬프트와 도구 5,000토큰 + 사용자 메시지 500토큰 + 응답 300토큰. 모델 가격은 입력/출력 백만 토큰당 $3 / $15.</p>
+</div>
+<div class="fig"><div class="fig-cap">도면 4 · 하루 비용: 캐싱 없음 약 $2,100 → 캐싱 약 $750</div>
+<div class="split" role="img" aria-label="캐싱 전 하루 약 2,100달러 중 캐싱 후 약 750달러가 남고 약 64퍼센트가 절감된다."><div class="fast" style="flex:36">캐싱 후 약 $750</div><div class="slow" style="flex:64">절감 약 $1,350 (약 64%)</div></div><div class="legend"><span><strong>캐싱 없음:</strong> 입력 100,000 × 5,500 = 550M 토큰 × $3/M = $1,650, 출력 30M × $15/M = $450, 합계 약 <strong>$2,100/일</strong></span><span><strong>5,000토큰 접두부 캐싱</strong> (읽기 약 0.1배): 캐시 입력 500M × $0.30/M = $150, 비캐시 입력 50M × $3/M = $150, 출력 $450, 합계 약 <strong>$750/일</strong></span></div>
+<p class="prose">정확도 영향은 없이 약 64% 절감됩니다. 그래서 캐싱이 <strong>가장 먼저 손대는 최적화</strong>입니다.</p>
+</div>
+</section>
+<section>
+<h2><span class="no">4.2</span>평가 데이터셋과 혼합 방법론 <span class="en">Evaluation datasets and mixed-methodology test frameworks</span></h2>
+<p class="prose">평가 기법 하나만으로는 충분하지 않습니다. 최소 다음 <strong>세 가지를 함께</strong> 씁니다.</p>
+<div class="fig"><div class="fig-cap">도면 5 · 세 방법을 합쳐 통과 여부 판단</div>
+<svg class="m" viewBox="0 0 237 132" style="max-width:308px" role="img" aria-label="변경이 골든셋, 모델 채점, 사람 평가 세 가지로 평가된 뒤 통과 여부로 합쳐진다.">
+<rect class="n-w" x="6" y="52" width="42" height="28" rx="6"/>
+<text class="t" x="27" y="66" text-anchor="middle">변경</text>
+<path class="e" d="M48 66 C65 66 65 24 78 24" marker-end="url(#ar)"/>
+<rect class="n-a" x="82" y="10" width="73" height="28" rx="6"/>
+<text class="t" x="119" y="24" text-anchor="middle">골든셋</text>
+<path class="e" d="M48 66 C65 66 65 66 78 66" marker-end="url(#ar)"/>
+<rect class="n-a" x="82" y="52" width="73" height="28" rx="6"/>
+<text class="t" x="119" y="66" text-anchor="middle">모델 채점</text>
+<path class="e" d="M48 66 C65 66 65 108 78 108" marker-end="url(#ar)"/>
+<rect class="n-a" x="82" y="94" width="73" height="28" rx="6"/>
+<text class="t" x="119" y="108" text-anchor="middle">사람 평가</text>
+<path class="e" d="M155 24 C172 24 172 66 185 66" marker-end="url(#ar)"/>
+<path class="e" d="M155 66 C172 66 172 66 185 66" marker-end="url(#ar)"/>
+<path class="e" d="M155 108 C172 108 172 66 185 66" marker-end="url(#ar)"/>
+<rect class="n-o" x="189" y="52" width="42" height="28" rx="6"/>
+<text class="t" x="210" y="66" text-anchor="middle">종합</text>
+<text class="tm" x="210" y="94" text-anchor="middle">출시 여부</text>
+</svg>
+</div>
+<div class="patterns">
+<div class="pat"><h4>골든셋 평가 <span class="en">Golden-set exact/graded</span></h4><svg class="m" viewBox="0 0 248 68" style="max-width:323px" role="img" aria-label="골든셋 입력이 자동 실행되어 정답과 비교된다.">
+<rect class="n" x="6" y="30" width="54" height="28" rx="6"/>
+<text class="t" x="33" y="44" text-anchor="middle">골든셋</text>
+<path class="e" d="M60 44 H74" marker-end="url(#ar)"/>
+<rect class="n-a" x="78" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="115" y="44" text-anchor="middle">자동 실행</text>
+<path class="e" d="M151 44 H165" marker-end="url(#ar)"/>
+<rect class="n-o" x="169" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="206" y="44" text-anchor="middle">정답 비교</text>
+</svg><p>대표 입력과 정답(또는 전문가 채점 결과) 모음을 <strong>변경마다 자동 실행</strong>합니다. 흔한 사례와 알려진 어려운 경계 사례를 모두 넣습니다.</p></div>
+<div class="pat"><h4>모델 채점 <span class="en">LLM-as-judge</span></h4><svg class="m" viewBox="0 0 224 68" style="max-width:292px" role="img" aria-label="출력이 별도 Claude 호출의 루브릭 채점을 거친다.">
+<rect class="n" x="6" y="30" width="42" height="28" rx="6"/>
+<text class="t" x="27" y="44" text-anchor="middle">출력</text>
+<path class="e" d="M48 44 H62" marker-end="url(#ar)"/>
+<rect class="n-a" x="66" y="30" width="92" height="28" rx="6"/>
+<text class="t" x="112" y="44" text-anchor="middle">Claude 심사</text>
+<path class="e" d="M158 44 H172" marker-end="url(#ar)"/>
+<rect class="n-o" x="176" y="30" width="42" height="28" rx="6"/>
+<text class="t" x="197" y="44" text-anchor="middle">점수</text>
+</svg><p>별도의 Claude 호출이 루브릭으로 열린 형태의 출력을 채점합니다. 사람이 못 하는 규모로 <strong>미묘한 품질 회귀</strong>를 잡습니다. 단, 편향이나 드리프트가 없는지 사람 판단과 <strong>주기적으로 검증</strong>해야 합니다.</p></div>
+<div class="pat"><h4>사람 평가 <span class="en">Human evaluation</span></h4><svg class="m" viewBox="0 0 236 68" style="max-width:307px" role="img" aria-label="출력 중 일부가 표본으로 뽑혀 사람이 검토한다.">
+<rect class="n" x="6" y="30" width="42" height="28" rx="6"/>
+<text class="t" x="27" y="44" text-anchor="middle">출력</text>
+<path class="e" d="M48 44 H62" marker-end="url(#ar)"/>
+<rect class="n-dash" x="66" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="103" y="44" text-anchor="middle">표본 추출</text>
+<path class="e" d="M139 44 H153" marker-end="url(#ar)"/>
+<rect class="n-w" x="157" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="194" y="44" text-anchor="middle">사람 검토</text>
+</svg><p>주관적 품질, 어조, 자동 채점이 놓치는 경계 사례에 필수입니다. 보통 모든 출력이 아니라 <strong>표본 추출</strong>로 적용합니다.</p></div>
+</div>
+<div class="callout "><span class="eyebrow">데이터셋 원칙</span>
+<p class="prose">데이터셋은 가능하면 <strong>실제 운영 트래픽</strong>에서 만들고(합성 예시만으로는 부족), 제품과 코퍼스가 변하면 <strong>갱신</strong>합니다. 정상 경로뿐 아니라 모호한 질문, 범위 밖 요청, 과거 실패 사례 같은 <strong>적대적·경계 사례</strong>도 명시적으로 포함합니다.</p>
+</div>
+</section>
+<section>
+<h2><span class="no">4.3</span>A/B 테스트와 반복 개선 <span class="en">A/B testing and iterative improvement</span></h2>
+<p class="prose">프롬프트, 모델, 검색 변경을 트래픽 100%에 내보내기 전에 <strong>통제된 비교</strong>를 합니다.</p>
+<div class="fig"><div class="fig-cap">도면 6 · 측정하고, 판단하고, 출시 후에도 다시 측정</div>
+<div class="scroll"><svg class="d" viewBox="0 0 720 280" role="img" aria-label="지표를 정의하고, 트래픽을 나눠 비교하고, 판정한 뒤 출시 후 측정이 다시 처음으로 이어진다.">
+<rect class="n" x="20" y="20" width="200" height="104" rx="8"/>
+<text class="tm" x="36" y="40">STAGE 1</text>
+<text class="tb" x="36" y="62">지표 정의</text>
+<text class="ts" x="36" y="86">주 지표 1개</text>
+<text class="ts" x="36" y="106">가드레일 지표</text>
+<rect class="n-a" x="260" y="20" width="200" height="104" rx="8"/>
+<text class="tm" x="276" y="40">STAGE 2</text>
+<text class="tb" x="276" y="62">분할 · 측정</text>
+<text class="ts" x="276" y="86">트래픽 분할</text>
+<text class="ts" x="276" y="106">충분한 표본</text>
+<path class="e" d="M220 72 H256" marker-end="url(#ar)"/>
+<rect class="n-o" x="500" y="20" width="200" height="104" rx="8"/>
+<text class="tm" x="516" y="40">STAGE 3</text>
+<text class="tb" x="516" y="62">판정</text>
+<text class="ts" x="516" y="86">주 지표 개선</text>
+<text class="ts" x="516" y="106">가드레일 유지</text>
+<path class="e" d="M460 72 H496" marker-end="url(#ar)"/>
+<path class="e-w" d="M600 124 V214 H224"/>
+<rect class="n-w" x="18" y="186" width="204" height="56" rx="8"/>
+<text class="tm" x="34" y="202">STAGE 4</text>
+<text class="tb" x="34" y="224">지속 측정</text>
+<path class="e-w" d="M120 186 V128" marker-end="url(#ar-w)"/>
+<text class="tw" x="132" y="156">출시 후에도 다시 측정</text>
+<text class="ts" x="120" y="262" text-anchor="middle">실제 트래픽은 출시 전 테스트셋에서 시간이 지나며 멀어진다</text>
+</svg></div>
+</div>
+<div class="vs"><div class="accent"><span class="tag">주 지표</span>변경이 움직이려는 지표. 예) 해결률</div><div class="warm"><span class="tag">가드레일 지표</span>나빠지면 안 되는 지표. 예) 안전 발동률, 지연 시간</div></div>
+<p class="prose">트래픽을 나누거나 골든셋을 두 변형에 모두 돌리되, 의미 있는 차이를 잡을 만큼 <strong>표본이 커야</strong> 합니다. "느낌상 낫다" 같은 작은 정성 비교는 대규모 운영 변경의 근거가 되지 못합니다.</p>
+<p class="prose">주 지표가 개선되고 가드레일 지표가 후퇴하지 않을 때만 승자를 내보냅니다. 애매하면 <strong>느낌으로 정하지 말고 데이터를 더 모읍니다</strong>.</p>
+</section>
+<section>
+<h2><span class="no">4.4</span>시스템 문제 진단 <span class="en">Diagnosing system issues</span></h2>
+<p class="prose">시험은 실패를 <strong>올바른 층에 귀속</strong>시키는지 반복해서 묻습니다. 증상에서 원인, 확인 위치 순서로 봅니다.</p>
+<div class="patterns">
+<div class="pat"><h4>그럴듯하지만 틀린 답 <span class="en">Retrieval / indexing failure</span></h4><svg class="m" viewBox="0 0 256 68" style="max-width:332px" role="img" aria-label="자신 있게 틀린 답은 검색 실패이므로 검색 로그를 본다.">
+<rect class="n-w" x="6" y="30" width="61" height="28" rx="6"/>
+<text class="t" x="37" y="44" text-anchor="middle">틀린 답</text>
+<path class="e" d="M67 44 H81" marker-end="url(#ar)"/>
+<rect class="n-a" x="85" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="122" y="44" text-anchor="middle">검색 실패</text>
+<path class="e" d="M158 44 H172" marker-end="url(#ar)"/>
+<rect class="n-o" x="176" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="213" y="44" text-anchor="middle">검색 로그</text>
+</svg><p>특히 <strong>데이터가 바뀐 직후</strong> 자신 있고 그럴듯하지만 사실이 틀린 답. 오래되었거나 깨졌거나 무관한 청크가 검색되고 있다.</p><div class="fit"><b>확인:</b> 이 쿼리에 실제로 어떤 청크가 검색되었는가?</div></div>
+<div class="pat"><h4>지시를 무시함 <span class="en">Prompt regression</span></h4><svg class="m" viewBox="0 0 320 68" style="max-width:417px" role="img" aria-label="예전에는 따르던 지시를 무시하면 프롬프트 회귀이므로 프롬프트 차이를 본다.">
+<rect class="n-w" x="6" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="43" y="44" text-anchor="middle">지시 무시</text>
+<path class="e" d="M79 44 H93" marker-end="url(#ar)"/>
+<rect class="n-a" x="97" y="30" width="97" height="28" rx="6"/>
+<text class="t" x="146" y="44" text-anchor="middle">프롬프트 회귀</text>
+<path class="e" d="M194 44 H208" marker-end="url(#ar)"/>
+<rect class="n-o" x="212" y="30" width="102" height="28" rx="6"/>
+<text class="t" x="263" y="44" text-anchor="middle">프롬프트 diff</text>
+</svg><p>전에는 따르던 명시적 지시를 무시함. 수정이 무언가를 깨뜨렸거나, 컨텍스트 윈도우·순서 문제로 지시가 <strong>묻혔다</strong>.</p><div class="fit"><b>확인:</b> 마지막 정상 버전과 프롬프트를 diff, 지시 위치 점검</div></div>
+<div class="pat"><h4>출처 없는 사실 <span class="en">Hallucination</span></h4><svg class="m" viewBox="0 0 248 68" style="max-width:323px" role="img" aria-label="출처 없이 지어낸 사실은 환각이므로 검색에서 나왔어야 하는지 확인한다.">
+<rect class="n-w" x="6" y="30" width="85" height="28" rx="6"/>
+<text class="t" x="49" y="44" text-anchor="middle">지어낸 사실</text>
+<path class="e" d="M91 44 H105" marker-end="url(#ar)"/>
+<rect class="n-a" x="109" y="30" width="42" height="28" rx="6"/>
+<text class="t" x="130" y="44" text-anchor="middle">환각</text>
+<path class="e" d="M151 44 H165" marker-end="url(#ar)"/>
+<rect class="n-o" x="169" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="206" y="44" text-anchor="middle">근거 확인</text>
+</svg><p>추적할 출처가 없는 사실, 이름, 인용을 만들어 냄. 근거 컨텍스트가 부족하거나 없거나, 작업이 모델의 <strong>신뢰 가능한 지식 범위</strong>를 넘었다.</p><div class="fit"><b>확인:</b> 검색에서 나왔어야 할 주장인가? 인용·검증 요구 추가</div></div>
+<div class="pat"><h4>광범위한 품질 저하 <span class="en">Model mismatch</span></h4><svg class="m" viewBox="0 0 270 68" style="max-width:351px" role="img" aria-label="배포 뒤 무관한 작업 전반의 품질 저하는 모델 불일치이므로 모델 ID를 비교한다.">
+<rect class="n-w" x="6" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="43" y="44" text-anchor="middle">전반 저하</text>
+<path class="e" d="M79 44 H93" marker-end="url(#ar)"/>
+<rect class="n-a" x="97" y="30" width="85" height="28" rx="6"/>
+<text class="t" x="140" y="44" text-anchor="middle">모델 불일치</text>
+<path class="e" d="M182 44 H196" marker-end="url(#ar)"/>
+<rect class="n-o" x="200" y="30" width="64" height="28" rx="6"/>
+<text class="t" x="232" y="44" text-anchor="middle">모델 ID</text>
+</svg><p>배포 뒤 서로 무관한 많은 작업에서 갑자기 품질이 떨어짐. 모델·버전 교체로 동작이 바뀌었거나, 라우팅 설정 오류로 <strong>엉뚱한 티어</strong>로 트래픽이 갔다.</p><div class="fit"><b>확인:</b> 마지막 정상 배포와 현재 배포의 모델 ID·버전 비교</div></div>
+<div class="pat"><h4>지연 시간 상승 <span class="en">Latency overhead</span></h4><svg class="m" viewBox="0 0 246 68" style="max-width:320px" role="img" aria-label="정확도 변화 없는 지연 시간 상승은 오버헤드이므로 캐시 적중률과 도구 호출 시간을 본다.">
+<rect class="n-w" x="6" y="30" width="54" height="28" rx="6"/>
+<text class="t" x="33" y="44" text-anchor="middle">느려짐</text>
+<path class="e" d="M60 44 H74" marker-end="url(#ar)"/>
+<rect class="n-a" x="78" y="30" width="66" height="28" rx="6"/>
+<text class="t" x="111" y="44" text-anchor="middle">오버헤드</text>
+<path class="e" d="M144 44 H158" marker-end="url(#ar)"/>
+<rect class="n-o" x="162" y="30" width="78" height="28" rx="6"/>
+<text class="t" x="201" y="44" text-anchor="middle">텔레메트리</text>
+</svg><p>정확도는 그대로인데 지연 시간만 오름. 검색·도구 호출 오버헤드, <strong>캐시되지 않은 프롬프트</strong>, 확장/인프라 병목.</p><div class="fit"><b>확인:</b> 캐시 적중률 텔레메트리, 도구 호출 시간 분해</div></div>
+</div>
+<div class="callout warm"><span class="eyebrow">시험 포인트</span>
+<p class="prose">실제 시험에서 가장 흔한 틀린 첫 추측 세 가지는 모델 자체를 탓하는 것(temperature, "가중치가 바뀌었다")입니다. 실제 결함은 <strong>검색, 프롬프트 구조, 설정</strong>에 있는 경우가 많습니다. 항상 <strong>증상이 나타난 시점에 구체적으로 무엇이 바뀌었는지</strong> 물으세요.</p>
+</div>
+</section>
+<section>
+<h2><span class="no">4.5</span>토큰·지연·비용 최적화 <span class="en">Optimizing token usage, latency, and cost-performance</span></h2>
+<p class="prose">최적화는 "그냥 싸게"가 아닙니다. 해당 SLA에서 <strong>비용·지연·정확도 경계의 가장 좋은 지점</strong>을 찾는 일입니다. 수단은 비용이 적게 드는 것부터 씁니다.</p>
+<div class="fig"><div class="fig-cap">도면 7 · 최적화 수단, ROI 높은 순</div>
+<div class="scroll"><svg class="d" viewBox="0 0 1120 240" role="img" aria-label="캐싱, 모델 라우팅, 컨텍스트 축소, 배치, 고비용 기법 순으로 올라가는 최적화 계단.">
+<path class="e-w" d="M30 220 V24" marker-end="url(#ar-w)"/>
+<text class="tw" x="40" y="22">비용 ↑</text>
+<rect class="n-o" x="60" y="150" width="200" height="74" rx="6"/>
+<text class="tb" x="76" y="172">프롬프트 캐싱</text>
+<text class="ts" x="76" y="194">ROI 최고</text>
+<text class="ts" x="76" y="212">정확도 비용 0</text>
+<rect class="n-a" x="270" y="125" width="200" height="99" rx="6"/>
+<text class="tb" x="286" y="147">모델 라우팅</text>
+<text class="ts" x="286" y="169">요청별로</text>
+<text class="ts" x="286" y="187">모델 크기 조정</text>
+<path class="e e-dash" d="M160 140 C160 110 200 121 262 121" marker-end="url(#ar)"/>
+<text class="ts" x="150" y="121" text-anchor="end">평가가 증명할 때만</text>
+<rect class="n-a" x="480" y="100" width="200" height="124" rx="6"/>
+<text class="tb" x="496" y="122">컨텍스트 축소</text>
+<text class="ts" x="496" y="144">평가로 검증된</text>
+<text class="ts" x="496" y="162">최소량만</text>
+<path class="e e-dash" d="M370 115 C370 85 410 96 472 96" marker-end="url(#ar)"/>
+<text class="ts" x="360" y="96" text-anchor="end">평가가 증명할 때만</text>
+<rect class="n" x="690" y="75" width="200" height="149" rx="6"/>
+<text class="tb" x="706" y="97">배치 처리</text>
+<text class="ts" x="706" y="119">지연 허용 작업</text>
+<text class="ts" x="706" y="137">Batches API</text>
+<path class="e e-dash" d="M580 90 C580 60 620 71 682 71" marker-end="url(#ar)"/>
+<text class="ts" x="570" y="71" text-anchor="end">평가가 증명할 때만</text>
+<rect class="n-w" x="900" y="50" width="200" height="174" rx="6"/>
+<text class="tb" x="916" y="72">고비용 기법</text>
+<text class="ts" x="916" y="94">확장 사고 · 투표</text>
+<text class="ts" x="916" y="112">큰 모델</text>
+<path class="e e-dash" d="M790 65 C790 35 830 46 892 46" marker-end="url(#ar)"/>
+<text class="ts" x="780" y="46" text-anchor="end">평가가 증명할 때만</text>
+</svg></div>
+</div>
+<div class="pillars"><div class="pillar"><h4>프롬프트 캐싱 <span class="en">Prompt caching</span></h4><span>올바르게 켜는 것이 보통 <strong>ROI가 가장 높은 수단</strong>이며 정확도 비용이 없습니다(Domain 2).</span><span class="ev">첫 번째 수단</span></div><div class="pillar"><h4>모델 라우팅 <span class="en">Right-size by routing</span></h4><span>모든 트래픽에 한 모델을 쓰지 말고 요청별로 적절한 크기를 고릅니다.</span><span class="ev">두 번째</span></div><div class="pillar"><h4>컨텍스트 축소 <span class="en">Trim retrieved context</span></h4><span>"많을수록 안전" 대신 평가로 검증된 최소량으로 줄입니다.</span><span class="ev">세 번째</span></div><div class="pillar"><h4>배치 처리 <span class="en">Batching</span></h4><span>지연이 중요하지 않은 작업(오프라인 분석, 비동기 워크로드의 Message Batches API)은 실시간 동기 가격을 낼 필요가 없습니다.</span><span class="ev">네 번째</span></div><div class="pillar"><h4>고비용 기법 <span class="en">Extended thinking, voting, larger models</span></h4><span>확장/적응형 사고, 다중 호출 투표, 더 큰 모델은 평가에서 중요한 정확도 지표를 실제로 올릴 때만 씁니다. 아니면 이득 없는 순수 비용입니다.</span><span class="ev">평가가 증명할 때만</span></div></div>
+</section>
+<section>
+<h2><span class="no">4.6</span>로깅과 관측성 모니터링 <span class="en">Monitoring with logging and observability tooling</span></h2>
+<p class="prose">지속적인 운영 모니터링은 출시 전 일회성 평가와 다릅니다. 4.1의 <strong>같은 다섯 지표 차원</strong>을 실시간 대시보드로 추적하고, 알림 임계값과 임계값 초과 때 누가 대응하는지 <strong>담당</strong>을 명확히 합니다.</p>
+<div class="fig"><div class="fig-cap">도면 8 · 평가는 생애 주기 활동</div>
+<svg class="m" viewBox="0 0 359 102" style="max-width:467px" role="img" aria-label="출시 전 평가, 운영 중 상시 평가, 변경 시 촉발 평가가 이어지는 평가 생애 주기.">
+<rect class="n-a" x="6" y="30" width="104" height="38" rx="6"/>
+<text class="t" x="58" y="41" text-anchor="middle">출시 전</text>
+<text class="ts" x="58" y="57" text-anchor="middle">출시 기준 충족?</text>
+<path class="e" d="M110 49 H124" marker-end="url(#ar)"/>
+<rect class="n-o" x="128" y="30" width="93" height="38" rx="6"/>
+<text class="t" x="174" y="41" text-anchor="middle">상시</text>
+<text class="ts" x="174" y="57" text-anchor="middle">기준 유지 중?</text>
+<path class="e" d="M221 49 H235" marker-end="url(#ar)"/>
+<rect class="n-w" x="239" y="30" width="115" height="38" rx="6"/>
+<text class="t" x="296" y="41" text-anchor="middle">촉발</text>
+<text class="ts" x="296" y="57" text-anchor="middle">변경이 회귀 유발?</text>
+<text class="tm" x="296" y="82" text-anchor="middle">문서 갱신 · 모델 업그레이드 · 새 프롬프트</text>
+</svg>
+</div>
+</section>
+<section>
+<h2>핵심 정리 <span class="en">Key takeaways: Domain 4</span></h2>
+<ul class="takeaways"><li><span>만들기 전에 정확도, 지연 시간, 비용, 안전, 보안 전반에서 <strong>숫자 목표</strong>를 정하세요. 나중이 아닙니다.</span></li><li><span><strong>골든셋, 모델 채점, 사람 평가</strong>를 함께 쓰세요. 하나만으로는 충분하지 않습니다.</span></li><li><span>전체 출시 전에 변경을 <strong>주 지표</strong>와 <strong>후퇴하지 않는 가드레일 지표</strong>로 A/B 테스트하세요.</span></li><li><span>진단은 "<strong>무엇이 바뀌었나?</strong>"를 먼저 묻습니다. 갑작스럽고 자신 있는 오답의 가장 흔한 원인은 모델이 아니라 검색·색인 실패입니다.</span></li><li><span>최적화는 ROI 순서로: <strong>캐싱 → 모델 라우팅 → 컨텍스트 축소 → 배치</strong>. 더 큰 모델, 투표, 확장 사고는 평가가 효과를 증명한 곳에만 쓰세요.</span></li></ul>
+</section>
+
+<p class="source">원문: <a href="https://amitj.me/claude/course/ccarp/2/#page-d4">원문: CCA-F 코스 Domain 4</a> 페이지 내용만 한국어로 정리하고 도식화했습니다.</p>
+
+</div>

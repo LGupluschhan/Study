@@ -1,0 +1,394 @@
+<title>이해관계자 소통·수명주기</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: 설계 도면(blueprint) 노트 — 좁은 본문 열 + 모눈 도면 패널. 섹션 번호는 원문 번호 그대로.
+   build_page.py가 이 파일을 <style>에 그대로 넣는다. 색은 모두 토큰으로만 쓴다(라이트/다크 자동). */
+:root {
+  --bg: #f5f7fa;
+  --panel: #ffffff;
+  --fg: #18212e;
+  --muted: #5a6779;
+  --line: #c9d2de;
+  --grid: #e6ebf2;
+  --accent: #2456c9;
+  --accent-soft: #e4ecfb;
+  --warm: #b8621b;
+  --warm-soft: #fbeedf;
+  --ok: #2f7d4f;
+  --ok-soft: #e2f2e8;
+  --node: #ffffff;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f141c; --panel: #161d28; --fg: #e3e8ef; --muted: #96a3b5; --line: #334155; --grid: #1e2734;
+    --accent: #7ea6ff; --accent-soft: #1c2a47; --warm: #f0a35e; --warm-soft: #3a2816;
+    --ok: #6cc892; --ok-soft: #173526; --node: #1b2431; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f141c; --panel: #161d28; --fg: #e3e8ef; --muted: #96a3b5; --line: #334155; --grid: #1e2734;
+  --accent: #7ea6ff; --accent-soft: #1c2a47; --warm: #f0a35e; --warm-soft: #3a2816;
+  --ok: #6cc892; --ok-soft: #173526; --node: #1b2431; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.75;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 80px;
+  word-break: keep-all; overflow-wrap: anywhere;
+}
+.wrap { max-width: 920px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+.prose { max-width: 680px; }
+h1, h2, h3 { text-wrap: balance; line-height: 1.35; margin: 0; }
+h1 { font-size: clamp(28px, 5vw, 40px); font-weight: 700; }
+h2 { font-size: 24px; font-weight: 700; display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+h2 .no { font-family: var(--font-mono); font-size: 15px; color: var(--accent); font-weight: 600; }
+h3 { font-size: 18px; font-weight: 700; }
+p { margin: 0; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.en { font-family: var(--font-mono); font-size: .78em; color: var(--muted); font-weight: 400; }
+section { display: flex; flex-direction: column; gap: 18px; }
+.lead { font-size: 18px; color: var(--muted); }
+
+/* header */
+header { display: flex; flex-direction: column; gap: 14px; }
+.weight { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.weight-bar { width: 220px; max-width: 100%; height: 10px; border-radius: 5px; background: var(--grid); overflow: hidden; }
+.weight-bar span { display: block; height: 100%; background: var(--accent); }
+.weight small { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+
+/* blueprint panel */
+.fig {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+  padding: 20px; display: flex; flex-direction: column; gap: 14px;
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 24px 24px; background-position: -1px -1px;
+}
+.fig-cap { font-family: var(--font-mono); font-size: 12px; color: var(--muted); letter-spacing: .04em; }
+.scroll { overflow-x: auto; }
+svg.d { display: block; width: 100%; height: auto; min-width: 560px; }
+svg.m { display: block; width: 100%; height: auto; }
+
+/* svg styling */
+.n { fill: var(--node); stroke: var(--line); stroke-width: 1.5; }
+.n-a { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+.n-w { fill: var(--warm-soft); stroke: var(--warm); stroke-width: 1.5; }
+.n-o { fill: var(--ok-soft); stroke: var(--ok); stroke-width: 1.5; }
+.n-dash { fill: var(--node); stroke: var(--muted); stroke-width: 1.3; stroke-dasharray: 4 3; }
+.bound { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 6 4; }
+.e { fill: none; stroke: var(--muted); stroke-width: 1.6; }
+.e-a { fill: none; stroke: var(--accent); stroke-width: 1.8; }
+.e-w { fill: none; stroke: var(--warm); stroke-width: 1.8; }
+.e-dash { stroke-dasharray: 5 4; }
+.ah { fill: var(--muted); } .ah-a { fill: var(--accent); } .ah-w { fill: var(--warm); }
+.t { fill: var(--fg); font-family: var(--font-body); font-size: 12px; }
+.tb { fill: var(--fg); font-family: var(--font-body); font-size: 14px; font-weight: 700; }
+.ts { fill: var(--muted); font-family: var(--font-body); font-size: 11px; }
+.tm { fill: var(--muted); font-family: var(--font-mono); font-size: 10px; letter-spacing: .04em; }
+.ta { fill: var(--accent); font-family: var(--font-body); font-size: 12px; font-weight: 700; }
+.tw { fill: var(--warm); font-family: var(--font-body); font-size: 12px; font-weight: 700; }
+svg text { dominant-baseline: middle; }
+
+/* lists */
+ul.plain { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 6px; }
+.tasks { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.task { border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; background: var(--panel); font-size: 15px; display: flex; gap: 10px; align-items: flex-start; }
+.task b { font-family: var(--font-mono); color: var(--accent); font-size: 13px; padding-top: 2px; }
+
+/* 1.1 work backward */
+.backward { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; }
+.step { flex: 1 1 150px; min-width: 0; border: 1px solid var(--line); background: var(--node); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 1.55; }
+.step .k { font-family: var(--font-mono); font-size: 11px; color: var(--muted); letter-spacing: .05em; }
+.step.goal { background: var(--ok-soft); border-color: var(--ok); }
+.step.pick { background: var(--accent-soft); border-color: var(--accent); }
+.arrow-row { font-family: var(--font-mono); font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.spectra { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.spec { background: var(--node); border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.spec-title { font-weight: 700; font-size: 14px; }
+.grad { height: 10px; border-radius: 5px; background: linear-gradient(90deg, var(--ok), var(--warm)); }
+.ends { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--muted); }
+.ends span:last-child { text-align: right; }
+.quote { border-left: 3px solid var(--accent); padding: 4px 0 4px 16px; font-size: 17px; }
+.quote small { display: block; color: var(--muted); font-size: 13px; }
+
+/* patterns grid */
+.patterns { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.pat { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.pat h4 { margin: 0; font-size: 16px; display: flex; flex-direction: column; gap: 2px; }
+.pat p { font-size: 14px; line-height: 1.6; }
+.pat .fit { font-size: 13px; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 8px; }
+.pat .fit b { color: var(--fg); font-weight: 500; }
+.pat svg { background: var(--bg); border-radius: 6px; }
+
+.callout { border: 1px solid var(--accent); background: var(--accent-soft); border-radius: 10px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; }
+.callout .eyebrow { color: var(--accent); }
+.callout.warm { border-color: var(--warm); background: var(--warm-soft); }
+.callout.warm .eyebrow { color: var(--warm); }
+
+/* heuristic */
+.vs { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.vs > div { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; min-width: 0; }
+.vs .tag { font-family: var(--font-mono); font-size: 12px; font-weight: 600; }
+.vs .ok .tag { color: var(--ok); } .vs .warm .tag { color: var(--warm); } .vs .accent .tag { color: var(--accent); }
+
+/* cost chips */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font-size: 13px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--warm); color: var(--warm); background: var(--warm-soft); }
+
+/* pillars */
+.pillars { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.pillar { background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--accent); border-radius: 6px; padding: 14px; display: flex; flex-direction: column; gap: 8px; min-width: 0; font-size: 14px; line-height: 1.55; }
+.pillar h4 { margin: 0; font-size: 16px; display: flex; flex-direction: column; }
+.pillar .ev { color: var(--muted); font-size: 13px; border-top: 1px dashed var(--line); padding-top: 8px; }
+.split { display: flex; height: 44px; border-radius: 8px; overflow: hidden; font-size: 13px; font-weight: 500; }
+.split div { display: flex; align-items: center; padding: 0 12px; min-width: 0; white-space: nowrap; overflow: hidden; }
+.split .fast { flex: 9; background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); border-radius: 8px 0 0 8px; }
+.split .slow { flex: 1.6; background: var(--warm-soft); color: var(--warm); border: 1px solid var(--warm); border-left: 0; border-radius: 0 8px 8px 0; justify-content: center; }
+.legend { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+
+/* takeaways */
+.takeaways { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.takeaways li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+.takeaways li::before { content: "✓"; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--ok-soft); color: var(--ok); font-size: 13px; font-weight: 700; margin-top: 3px; }
+
+.source { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; }
+.source a { color: var(--accent); }
+.note { font-size: 14px; color: var(--muted); }
+.c-accent { color: var(--accent); } .c-warm { color: var(--warm); } .c-ok { color: var(--ok); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0 0L10 5L0 10z"/></marker>
+    <marker id="ar-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah-a" d="M0 0L10 5L0 10z"/></marker>
+    <marker id="ar-w" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah-w" d="M0 0L10 5L0 10z"/></marker>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">CCA-F 코스 · Part 2 · Domain 6</div>
+  <h1>이해관계자 소통과 수명주기 관리 <span class="en">Stakeholder Communication & Lifecycle Management</span></h1>
+  <p class="lead prose">비즈니스 요구와 기술적 트레이드오프 사이를 옮기는 <strong>번역가로서의 아키텍트</strong>. 출시 순간만이 아니라 시스템의 <strong>전체 생애</strong>를 다룹니다.</p>
+  <div class="weight"><div class="weight-bar" role="img" aria-label="시험 비중 14%"><span style="width:14%"></span></div><small>시험 비중 14%</small></div>
+</header>
+
+<section>
+<h2>공식 출제 항목 <span class="en">Official task statements</span></h2>
+<div class="tasks"><div class="task"><b>6.1</b><span>구조화된 발굴과 요구사항 수집</span></div><div class="task"><b>6.2</b><span>아키텍처 결정과 트레이드오프 소통</span></div><div class="task"><b>6.3</b><span>이해관계자 피드백 루프와 기대치 조율 관리 (SLA 포함)</span></div><div class="task"><b>6.4</b><span>아키텍처 문서화와 구현 가이드 제공</span></div><div class="task"><b>6.5</b><span>수명주기 단계 지원 (발굴, 설계, 인계, 모니터링, 반복 개선)</span></div></div>
+</section>
+<section>
+<h2><span class="no">6.1</span>구조화된 발굴과 요구사항 수집 <span class="en">Structured discovery and requirement gathering</span></h2>
+<p class="prose">프로젝트 리스크의 대부분은 발굴 단계에서 <strong>만들어지거나 피해집니다</strong>. 구조화된 발굴은 최소 다섯 가지를 다룹니다.</p>
+<div class="fig"><div class="fig-cap">도면 1 · 발굴이 다루는 다섯 가지</div>
+<svg class="m" viewBox="0 0 240 216" style="max-width:313px" role="img" aria-label="구조화된 발굴이 비즈니스 목표, 현재 프로세스, 데이터 목록, 제약, 리스크 허용도의 다섯 가지로 갈라진다.">
+<rect class="n-o" x="6" y="94" width="97" height="28" rx="6"/>
+<text class="t" x="55" y="108" text-anchor="middle">구조화된 발굴</text>
+<path class="e" d="M103 108 C120 108 120 24 133 24" marker-end="url(#ar)"/>
+<rect class="n-a" x="137" y="10" width="97" height="28" rx="6"/>
+<text class="t" x="186" y="24" text-anchor="middle">비즈니스 목표</text>
+<path class="e" d="M103 108 C120 108 120 66 133 66" marker-end="url(#ar)"/>
+<rect class="n-a" x="137" y="52" width="97" height="28" rx="6"/>
+<text class="t" x="186" y="66" text-anchor="middle">현재 프로세스</text>
+<path class="e" d="M103 108 C120 108 120 108 133 108" marker-end="url(#ar)"/>
+<rect class="n-a" x="137" y="94" width="97" height="28" rx="6"/>
+<text class="t" x="186" y="108" text-anchor="middle">데이터 목록</text>
+<path class="e" d="M103 108 C120 108 120 150 133 150" marker-end="url(#ar)"/>
+<rect class="n-w" x="137" y="136" width="97" height="28" rx="6"/>
+<text class="t" x="186" y="150" text-anchor="middle">제약</text>
+<path class="e" d="M103 108 C120 108 120 192 133 192" marker-end="url(#ar)"/>
+<rect class="n-w" x="137" y="178" width="97" height="28" rx="6"/>
+<text class="t" x="186" y="192" text-anchor="middle">리스크 허용도</text>
+</svg>
+</div>
+<div class="pillars"><div class="pillar"><h4>비즈니스 목표와 성공 지표 <span class="en">Business objective & success metric</span></h4><span>특정 가치 축(Domain 1)에 묶습니다. 성공하면 <strong>어떤 숫자가, 얼마나</strong> 움직이는가?</span><span class="ev">성공 지표</span></div><div class="pillar"><h4>현재 프로세스 <span class="en">Current-state process</span></h4><span>지금은 누가 하는가, 얼마나 걸리는가, 지금 오류율은 얼마인가. 새 시스템이 넘어야 할 <strong>기준선</strong>입니다.</span><span class="ev">기준선</span></div><div class="pillar"><h4>데이터 목록 <span class="en">Data inventory</span></h4><span>필요한 정보는 어디에 있고, 누가 소유하며, 품질과 접근 통제 상태는 어떤가.</span><span class="ev">소유자 · 품질 · 접근 통제</span></div><div class="pillar"><h4>제약 <span class="en">Constraints</span></h4><span>규제(Domain 5), 예산, 기존 기술 약속, 일정.</span><span class="ev">규제 · 예산 · 기술 · 일정</span></div><div class="pillar"><h4>리스크 허용도 <span class="en">Risk tolerance</span></h4><span>이 사용 사례에서 허용 가능한 오류는 어떤 모습이고, 허용할 수 없는 오류는 어떤 모습인가.</span><span class="ev">허용 / 불허 오류</span></div></div>
+<div class="callout warm"><span class="eyebrow">건너뛰면</span>
+<p class="prose">구조화된 발굴을 건너뛰는 것은, 기술적으로는 "작동"하는데 이해관계자가 실제로 원한 가치를 내지 못하는 프로젝트의 <strong>가장 흔한 근본 원인</strong>입니다.</p>
+</div>
+</section>
+<section>
+<h2><span class="no">6.2</span>아키텍처 결정과 트레이드오프 소통 <span class="en">Communicating architectural decisions and trade-offs</span></h2>
+<p class="prose">비기술 이해관계자에게 필요한 것은 구현 세부가 아니라, 결정이 <strong>자신에게 무엇을 치르게 하고 왜 내려졌는지</strong>입니다. 아키텍처 결정 기록(ADR)의 믿을 만한 구조는 다음과 같습니다.</p>
+<div class="fig"><div class="fig-cap">도면 2 · ADR의 다섯 칸</div>
+<svg class="m" viewBox="0 0 524 78" style="max-width:681px" role="img" aria-label="맥락, 고려한 선택지, 결정, 감수한 트레이드오프, 되돌릴 수 있는 정도로 이어지는 ADR 구조.">
+<rect class="n" x="6" y="30" width="80" height="38" rx="6"/>
+<text class="t" x="46" y="41" text-anchor="middle">맥락</text>
+<text class="ts" x="46" y="57" text-anchor="middle">무엇이 계기</text>
+<path class="e" d="M86 49 H100" marker-end="url(#ar)"/>
+<rect class="n-a" x="104" y="30" width="88" height="38" rx="6"/>
+<text class="t" x="148" y="41" text-anchor="middle">선택지</text>
+<text class="ts" x="148" y="57" text-anchor="middle">진짜 대안 2+</text>
+<path class="e" d="M192 49 H206" marker-end="url(#ar)"/>
+<rect class="n-o" x="210" y="30" width="91" height="38" rx="6"/>
+<text class="t" x="255" y="41" text-anchor="middle">결정</text>
+<text class="ts" x="255" y="57" text-anchor="middle">무엇을 골랐나</text>
+<path class="e" d="M301 49 H315" marker-end="url(#ar)"/>
+<rect class="n-w" x="319" y="30" width="91" height="38" rx="6"/>
+<text class="t" x="364" y="41" text-anchor="middle">트레이드오프</text>
+<text class="ts" x="364" y="57" text-anchor="middle">비즈니스 언어</text>
+<path class="e" d="M409 49 H423" marker-end="url(#ar)"/>
+<rect class="n-dash" x="427" y="30" width="91" height="38" rx="6"/>
+<text class="t" x="473" y="41" text-anchor="middle">되돌림</text>
+<text class="ts" x="473" y="57" text-anchor="middle">바꾸기 쉬운가</text>
+</svg>
+</div>
+<div class="pillars"><div class="pillar"><h4>맥락 <span class="en">Context</span></h4><span>이 결정을 촉발한 문제나 제약.</span><span class="ev">계기</span></div><div class="pillar"><h4>고려한 선택지 <span class="en">Options considered</span></h4><span>허수아비가 아닌 <strong>진짜 대안 최소 두 가지</strong>.</span><span class="ev">대안 2개 이상</span></div><div class="pillar"><h4>결정 <span class="en">Decision</span></h4><span>선택한 것.</span><span class="ev">선택</span></div><div class="pillar"><h4>감수한 트레이드오프 <span class="en">Trade-offs accepted</span></h4><span>비즈니스 언어로 명시합니다. 예) "요청당 비용이 조금 오르는 대신, 비즈니스가 요구하는 99.9% 지연 시간 SLA를 얻는다."</span><span class="ev">비즈니스 용어로</span></div><div class="pillar"><h4>되돌릴 수 있는 정도 <span class="en">Reversibility</span></h4><span>요구사항이 바뀌면 이 결정을 나중에 바꾸기가 얼마나 어려운가.</span><span class="ev">변경 난이도</span></div></div>
+<div class="callout "><span class="eyebrow">시험 포인트</span>
+<p class="prose">임원이나 비기술 고객에게 발표하는 시나리오에서, 전문 용어로 가는지 <strong>평이하고 결정에 관련된 언어</strong>로 가는지를 시험이 자주 묻습니다.</p>
+</div>
+</section>
+<section>
+<h2><span class="no">6.3</span>피드백 루프와 SLA 조율 <span class="en">Managing stakeholder feedback loops and SLA alignment</span></h2>
+<p class="prose">관계를 망치는 가장 흔한 이유는 기술 실패가 아니라 <strong>기대치 불일치</strong>입니다. 구체적인 실천은 다음과 같습니다.</p>
+<div class="fig"><div class="fig-cap">도면 3 · 정기 피드백으로 기대치 맞추기</div>
+<svg class="m" viewBox="0 0 345 130" style="max-width:448px" role="img" aria-label="팀이 진행 상황을 보여 주면 이해관계자가 우려를 일찍 제기하는 정기 반복.">
+<rect class="n-a" x="16" y="30" width="96" height="40" rx="6"/>
+<text class="t" x="64" y="42" text-anchor="middle">팀</text>
+<text class="ts" x="64" y="58" text-anchor="middle">진행 공유</text>
+<rect class="n-w" x="183" y="30" width="97" height="40" rx="6"/>
+<text class="t" x="231" y="42" text-anchor="middle">이해관계자</text>
+<text class="ts" x="231" y="58" text-anchor="middle">우려 조기 제기</text>
+<path class="e" d="M112 40 H179" marker-end="url(#ar)"/>
+<text class="ts" x="147" y="26" text-anchor="middle">진행 상황</text>
+<path class="e-w" d="M183 60 H116" marker-end="url(#ar-w)"/>
+<text class="tw" x="147" y="82" text-anchor="middle">피드백</text>
+<path class="e" d="M231 70 V100" marker-end="url(#ar)"/>
+<text class="ts" x="231" y="116" text-anchor="middle">정기 주기 (임시 에스컬레이션만이 아님)</text>
+</svg>
+</div>
+<div class="pillars"><div class="pillar"><h4>SLA를 문서로 <span class="en">Written SLAs</span></h4><span>지연 시간, 정확도 하한, 가동 시간을 문서로 정하고 Domain 4의 평가 틀과 <strong>같은 지표</strong>에 묶습니다. "빠르다", "정확하다"가 팀과 고객 사이에서 정의되지 않은 채 남지 않게 합니다.</span><span class="ev">Domain 4 지표와 연결</span></div><div class="pillar"><h4>정기 피드백 주기 <span class="en">Recurring cadence</span></h4><span>임시 에스컬레이션만이 아니라 정기적이고 구조화된 주기. 이해관계자가 진행을 보고 우려가 <strong>쌓이기 전에</strong> 일찍 제기할 수 있습니다.</span><span class="ev">정기 주기</span></div><div class="pillar"><h4>충돌하는 요청 <span class="en">Conflicting requests</span></h4><span>불필요한 멀티 에이전트 시스템, 비현실적인 정확도 보장처럼 건전한 아키텍처와 부딪히는 요청은 <strong>트레이드오프 언어로 직접</strong> 다룹니다. 조용히 따르거나 조용히 무시하지 않습니다.</span><span class="ev">직접 · 트레이드오프 언어</span></div><div class="pillar"><h4>범위 확대 관리 <span class="en">Scope creep</span></h4><span>프로젝트 중 발견한 새 요구사항은 그냥 흡수하지 말고 <strong>원래의 성공 지표와 제약</strong>에 비추어 평가합니다.</span><span class="ev">성공 지표 · 제약 기준</span></div></div>
+</section>
+<section>
+<h2><span class="no">6.4</span>문서화와 구현 가이드 <span class="en">Documenting architectures and implementation guidance</span></h2>
+<p class="prose">원래 아키텍트만 쓸 수 있는 문서는 목적을 이루지 못한 것입니다. 완전한 아키텍처 패키지는 보통 다음을 포함합니다.</p>
+<div class="fig"><div class="fig-cap">도면 4 · 아키텍처 패키지의 다섯 구성요소</div>
+<svg class="m" viewBox="0 0 276 216" style="max-width:359px" role="img" aria-label="아키텍처 패키지가 시스템 다이어그램, 선택 근거, 가드레일·컴플라이언스, 평가 결과, 런북으로 이루어진다.">
+<rect class="n-o" x="6" y="94" width="109" height="28" rx="6"/>
+<text class="t" x="61" y="108" text-anchor="middle">아키텍처 패키지</text>
+<path class="e" d="M115 108 C132 108 132 24 145 24" marker-end="url(#ar)"/>
+<rect class="n-a" x="149" y="10" width="121" height="28" rx="6"/>
+<text class="t" x="210" y="24" text-anchor="middle">시스템 다이어그램</text>
+<path class="e" d="M115 108 C132 108 132 66 145 66" marker-end="url(#ar)"/>
+<rect class="n-a" x="149" y="52" width="121" height="28" rx="6"/>
+<text class="t" x="210" y="66" text-anchor="middle">선택 근거</text>
+<path class="e" d="M115 108 C132 108 132 108 145 108" marker-end="url(#ar)"/>
+<rect class="n-a" x="149" y="94" width="121" height="28" rx="6"/>
+<text class="t" x="210" y="108" text-anchor="middle">가드레일</text>
+<path class="e" d="M115 108 C132 108 132 150 145 150" marker-end="url(#ar)"/>
+<rect class="n-a" x="149" y="136" width="121" height="28" rx="6"/>
+<text class="t" x="210" y="150" text-anchor="middle">평가 결과</text>
+<path class="e" d="M115 108 C132 108 132 192 145 192" marker-end="url(#ar)"/>
+<rect class="n-w" x="149" y="178" width="121" height="28" rx="6"/>
+<text class="t" x="210" y="192" text-anchor="middle">런북</text>
+</svg>
+</div>
+<div class="pillars"><div class="pillar"><h4>시스템 다이어그램 <span class="en">System diagram</span></h4><span>4단계 루프(Domain 1: 입력, 처리, 출력, 피드백)와 <strong>모든 외부 연동</strong>을 보여 줍니다.</span><span class="ev">Domain 1</span></div><div class="pillar"><h4>선택의 근거 <span class="en">Rationale</span></h4><span>모델, 프롬프트, 검색 선택의 이유. 후임 엔지니어가 의도된 트레이드오프를 이유도 모른 채 "최적화"해서 없애지 않도록 합니다.</span><span class="ev">의도된 트레이드오프 보존</span></div><div class="pillar"><h4>가드레일·컴플라이언스 <span class="en">Guardrails & compliance</span></h4><span>적용된 통제와 이유(Domain 5). 감사와 인계에 씁니다.</span><span class="ev">Domain 5</span></div><div class="pillar"><h4>평가 결과 <span class="en">Evaluation results</span></h4><span>출시를 승인할 때 쓴 평가 결과와 지표 정의(Domain 4).</span><span class="ev">Domain 4</span></div><div class="pillar"><h4>런북 <span class="en">Runbooks</span></h4><span>무언가 깨졌을 때 <strong>먼저 무엇을 확인하나</strong>, 누가 무엇을 소유하나, 변경을 어떻게 롤백하나.</span><span class="ev">확인 · 소유 · 롤백</span></div></div>
+</section>
+<section>
+<h2><span class="no">6.5</span>수명주기 단계 <span class="en">Lifecycle phases: discovery → design → handoff → monitoring → iteration</span></h2>
+<div class="fig"><div class="fig-cap">도면 5 · 수명주기 여섯 단계, 반복은 다시 평가로</div>
+<div class="scroll"><svg class="d" viewBox="0 0 720 280" role="img" aria-label="발굴, 설계, 구축·검증, 인계, 모니터링, 반복 개선의 수명주기. 반복 개선은 설계로 돌아간다.">
+<rect class="n" x="20" y="20" width="200" height="104" rx="8"/>
+<text class="tm" x="36" y="40">STAGE 1</text>
+<text class="tb" x="36" y="62">발굴 → 설계</text>
+<text class="ts" x="36" y="86">요구사항 수집</text>
+<text class="ts" x="36" y="106">ADR · 평가 계획</text>
+<rect class="n-a" x="260" y="20" width="200" height="104" rx="8"/>
+<text class="tm" x="276" y="40">STAGE 2</text>
+<text class="tb" x="276" y="62">구축 → 인계</text>
+<text class="ts" x="276" y="86">기준 대비 검증</text>
+<text class="ts" x="276" y="106">런북 · 지식 이전</text>
+<path class="e" d="M220 72 H256" marker-end="url(#ar)"/>
+<rect class="n-o" x="500" y="20" width="200" height="104" rx="8"/>
+<text class="tm" x="516" y="40">STAGE 3</text>
+<text class="tb" x="516" y="62">모니터링 → 반복</text>
+<text class="ts" x="516" y="86">같은 지표 관측</text>
+<text class="ts" x="516" y="106">A/B · 평가 규율</text>
+<path class="e" d="M460 72 H496" marker-end="url(#ar)"/>
+<path class="e-w" d="M600 124 V214 H224"/>
+<rect class="n-w" x="18" y="186" width="204" height="56" rx="8"/>
+<text class="tm" x="34" y="202">STAGE 4</text>
+<text class="tb" x="34" y="224">출시가 끝이 아니다</text>
+<path class="e-w" d="M120 186 V128" marker-end="url(#ar-w)"/>
+<text class="tw" x="132" y="156">운영 피드백으로 다시 설계</text>
+<text class="ts" x="120" y="262" text-anchor="middle">프로덕션 피드백, 드리프트, 변하는 비즈니스 요구가 반복을 이끈다</text>
+</svg></div>
+</div>
+<div class="patterns">
+<div class="pat"><h4>발굴 <span class="en">Discovery</span></h4><svg class="m" viewBox="0 0 145 68" style="max-width:189px" role="img" aria-label="구조화된 요구사항 수집이 승인된 문서로 끝난다.">
+<rect class="n" x="6" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="43" y="44" text-anchor="middle">요구 수집</text>
+<path class="e" d="M79 44 H93" marker-end="url(#ar)"/>
+<rect class="n-o" x="97" y="30" width="42" height="28" rx="6"/>
+<text class="t" x="118" y="44" text-anchor="middle">서명</text>
+</svg><p><strong>활동:</strong> 구조화된 요구사항 수집(6.1).</p><div class="fit"><b>종료 기준:</b> 성공 지표, 제약, 리스크 허용도가 문서화되고 승인됨</div></div>
+<div class="pat"><h4>설계 <span class="en">Design</span></h4><svg class="m" viewBox="0 0 198 68" style="max-width:257px" role="img" aria-label="아키텍처 선택과 트레이드오프 분석이 ADR 승인으로 끝난다.">
+<rect class="n" x="6" y="30" width="97" height="28" rx="6"/>
+<text class="t" x="55" y="44" text-anchor="middle">아키텍처 선택</text>
+<path class="e" d="M103 44 H117" marker-end="url(#ar)"/>
+<rect class="n-o" x="121" y="30" width="71" height="28" rx="6"/>
+<text class="t" x="157" y="44" text-anchor="middle">ADR 승인</text>
+</svg><p><strong>활동:</strong> 아키텍처 선택과 트레이드오프 분석(Domain 1-3).</p><div class="fit"><b>종료 기준:</b> ADR을 이해관계자가 검토·승인, 평가 계획 정의됨 (Domain 4)</div></div>
+<div class="pat"><h4>구축·검증 <span class="en">Build & validate</span></h4><svg class="m" viewBox="0 0 205 68" style="max-width:267px" role="img" aria-label="구현과 평가가 합의된 출시 기준 충족으로 끝난다.">
+<rect class="n" x="6" y="30" width="42" height="28" rx="6"/>
+<text class="t" x="27" y="44" text-anchor="middle">구현</text>
+<path class="e" d="M48 44 H62" marker-end="url(#ar)"/>
+<rect class="n-a" x="66" y="30" width="42" height="28" rx="6"/>
+<text class="t" x="87" y="44" text-anchor="middle">평가</text>
+<path class="e" d="M108 44 H122" marker-end="url(#ar)"/>
+<rect class="n-o" x="126" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="163" y="44" text-anchor="middle">기준 충족</text>
+</svg><p><strong>활동:</strong> 구현, 사전에 정의한 기준에 대한 평가.</p><div class="fit"><b>종료 기준:</b> 정확도, 지연 시간, 비용, 안전, 보안 전반에서 합의된 출시 기준 충족</div></div>
+<div class="pat"><h4>인계 <span class="en">Handoff</span></h4><svg class="m" viewBox="0 0 282 68" style="max-width:367px" role="img" aria-label="문서화와 지식 이전이 운영팀의 독립적 사고 대응으로 끝난다.">
+<rect class="n" x="6" y="30" width="88" height="28" rx="6"/>
+<text class="t" x="50" y="44" text-anchor="middle">문서 · 런북</text>
+<path class="e" d="M94 44 H108" marker-end="url(#ar)"/>
+<rect class="n-a" x="112" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="148" y="44" text-anchor="middle">지식 이전</text>
+<path class="e" d="M185 44 H199" marker-end="url(#ar)"/>
+<rect class="n-o" x="203" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="239" y="44" text-anchor="middle">독립 대응</text>
+</svg><p><strong>활동:</strong> 시스템을 운영할 팀에 문서, 런북, 지식 이전.</p><div class="fit"><b>종료 기준:</b> 운영팀이 일상적 사고를 스스로 진단하고 대응할 수 있음</div></div>
+<div class="pat"><h4>모니터링 <span class="en">Monitoring</span></h4><svg class="m" viewBox="0 0 217 68" style="max-width:282px" role="img" aria-label="같은 지표의 지속 관측이 알림과 담당 지정으로 끝난다.">
+<rect class="n" x="6" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="43" y="44" text-anchor="middle">지표 관측</text>
+<path class="e" d="M79 44 H93" marker-end="url(#ar)"/>
+<rect class="n-a" x="97" y="30" width="42" height="28" rx="6"/>
+<text class="t" x="118" y="44" text-anchor="middle">알림</text>
+<path class="e" d="M139 44 H153" marker-end="url(#ar)"/>
+<rect class="n-o" x="157" y="30" width="54" height="28" rx="6"/>
+<text class="t" x="184" y="44" text-anchor="middle">담당자</text>
+</svg><p><strong>활동:</strong> 같은 지표에 대한 지속적 관측성 (Domain 4).</p><div class="fit"><b>종료 기준:</b> 알림이 작동 중이고 대응 담당이 지정됨</div></div>
+<div class="pat"><h4>반복 개선 <span class="en">Iteration</span></h4><svg class="m" viewBox="0 0 229 68" style="max-width:298px" role="img" aria-label="프로덕션 피드백 기반 개선이 처음 출시와 같은 A/B와 평가 규율을 거친다.">
+<rect class="n" x="6" y="30" width="54" height="28" rx="6"/>
+<text class="t" x="33" y="44" text-anchor="middle">피드백</text>
+<path class="e" d="M60 44 H74" marker-end="url(#ar)"/>
+<rect class="n-a" x="78" y="30" width="42" height="28" rx="6"/>
+<text class="t" x="99" y="44" text-anchor="middle">변경</text>
+<path class="e" d="M120 44 H134" marker-end="url(#ar)"/>
+<rect class="n-o" x="138" y="30" width="85" height="28" rx="6"/>
+<text class="t" x="181" y="44" text-anchor="middle">A/B · 평가</text>
+</svg><p><strong>활동:</strong> 프로덕션 피드백, 드리프트, 변하는 비즈니스 요구에 따른 지속 개선.</p><div class="fit"><b>종료 기준:</b> 변경이 최초 출시와 같은 A/B 및 평가 규율을 거침</div></div>
+</div>
+<div class="callout warm"><span class="eyebrow">시험 포인트</span>
+<p class="prose">시스템 아키텍처는 출시 때 "끝나지" 않습니다. 모니터링과 반복 개선은 <strong>처음부터 설계에 넣는 단계</strong>이지, 요란하게 터질 때만 일어나는 뒷일이 아니라고 시험은 봅니다.</p>
+</div>
+</section>
+<section>
+<h2>핵심 정리 <span class="en">Key takeaways: Domain 6</span></h2>
+<ul class="takeaways"><li><span>구조화된 발굴(<strong>목표, 현재 상태, 데이터 목록, 제약, 리스크 허용도</strong>)이 이후 프로젝트 실패의 대부분을 막습니다.</span></li><li><span>아키텍처 결정은 비즈니스 트레이드오프 언어로 소통합니다: <strong>맥락, 선택지, 결정, 감수한 트레이드오프, 되돌릴 수 있는 정도</strong>.</span></li><li><span>SLA를 구체적 지표에 묶어 <strong>문서로</strong> 정하고, 건전한 아키텍처와 충돌하는 요청은 조용히 넘기지 말고 직접 다룹니다.</span></li><li><span>문서는 <strong>원래 아키텍트가 아닌 사람</strong>도 시스템을 운영하고 발전시킬 수 있게 해야 합니다.</span></li><li><span>발굴, 설계, 인계, 모니터링, 반복 개선을 각각 명확한 종료 기준이 있는 <strong>설계된 수명주기 단계</strong>로 다루고, 출시에서 끝나는 프로젝트로 보지 않습니다.</span></li></ul>
+</section>
+
+<p class="source">원문: <a href="https://amitj.me/claude/course/ccarp/2/#page-d6">원문: CCA-F 코스 Domain 6</a> 페이지 내용만 한국어로 정리하고 도식화했습니다.</p>
+
+</div>

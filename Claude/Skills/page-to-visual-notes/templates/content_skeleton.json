@@ -1,0 +1,41 @@
+{
+  "title": "TODO 2~4단어 이름",
+  "eyebrow": "TODO 코스 · Part · Domain",
+  "h1": "TODO 한국어 제목",
+  "h1_en": "TODO Original Title",
+  "lead": "TODO 이 섹션이 다루는 능력/주제를 한두 문장으로.",
+  "weight": {"pct": 0, "label": "TODO 시험 비중 (없으면 이 줄 삭제)"},
+  "sections": [
+    {
+      "title": "공식 출제 항목", "en": "Official task statements",
+      "blocks": [
+        {"t": "tasks", "items": [["1.1", "TODO"], ["1.2", "TODO"]]}
+      ]
+    },
+    {
+      "no": "1.1", "title": "TODO 소절 제목", "en": "TODO original",
+      "blocks": [
+        {"t": "p", "html": "TODO 핵심 설명"},
+        {"t": "fig", "cap": "도면 1 · TODO", "items": [
+          {"t": "diagram", "kind": "chain", "aria": "TODO 도식 설명", "nodes": ["입력", {"label": "처리", "kind": "a"}, "출력"]}
+        ]}
+      ]
+    },
+    {
+      "no": "1.2", "title": "TODO 패턴 여러 개인 소절", "en": "TODO",
+      "blocks": [
+        {"t": "cards", "items": [
+          {"title": "TODO 패턴", "en": "TODO",
+           "diagram": {"kind": "fanout", "aria": "TODO", "head": ["입력"], "branches": ["A", "B", "C"], "tail": [{"label": "집계", "kind": "o"}]},
+           "html": "TODO 설명", "fit": {"label": "적합", "html": "TODO 사례"}}
+        ]},
+        {"t": "callout", "eyebrow": "TODO 시험 포인트", "items": [{"t": "p", "html": "TODO"}]}
+      ]
+    },
+    {
+      "title": "핵심 정리", "en": "Key takeaways",
+      "blocks": [{"t": "takeaways", "items": ["TODO"]}]
+    }
+  ],
+  "source": {"url": "TODO 원문 URL#anchor", "label": "TODO 링크 텍스트"}
+}

@@ -1,0 +1,654 @@
+<title>솔루션 설계와 아키텍처</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: 설계 도면(blueprint) 노트 — 좁은 본문 열 + 넓은 도면 패널, 섹션 번호는 원문 번호(1.1~1.6) 그대로 */
+:root {
+  --bg: #f5f7fa;
+  --panel: #ffffff;
+  --fg: #18212e;
+  --muted: #5a6779;
+  --line: #c9d2de;
+  --grid: #e6ebf2;
+  --accent: #2456c9;
+  --accent-soft: #e4ecfb;
+  --warm: #b8621b;
+  --warm-soft: #fbeedf;
+  --ok: #2f7d4f;
+  --ok-soft: #e2f2e8;
+  --node: #ffffff;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f141c; --panel: #161d28; --fg: #e3e8ef; --muted: #96a3b5; --line: #334155; --grid: #1e2734;
+    --accent: #7ea6ff; --accent-soft: #1c2a47; --warm: #f0a35e; --warm-soft: #3a2816;
+    --ok: #6cc892; --ok-soft: #173526; --node: #1b2431; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f141c; --panel: #161d28; --fg: #e3e8ef; --muted: #96a3b5; --line: #334155; --grid: #1e2734;
+  --accent: #7ea6ff; --accent-soft: #1c2a47; --warm: #f0a35e; --warm-soft: #3a2816;
+  --ok: #6cc892; --ok-soft: #173526; --node: #1b2431; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.75;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 80px;
+  word-break: keep-all; overflow-wrap: anywhere;
+}
+.wrap { max-width: 920px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+.prose { max-width: 680px; }
+h1, h2, h3 { text-wrap: balance; line-height: 1.35; margin: 0; }
+h1 { font-size: clamp(28px, 5vw, 40px); font-weight: 700; }
+h2 { font-size: 24px; font-weight: 700; display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+h2 .no { font-family: var(--font-mono); font-size: 15px; color: var(--accent); font-weight: 600; }
+h3 { font-size: 18px; font-weight: 700; }
+p { margin: 0; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.en { font-family: var(--font-mono); font-size: .78em; color: var(--muted); font-weight: 400; }
+section { display: flex; flex-direction: column; gap: 18px; }
+.lead { font-size: 18px; color: var(--muted); }
+
+/* header */
+header { display: flex; flex-direction: column; gap: 14px; }
+.weight { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.weight-bar { width: 220px; max-width: 100%; height: 10px; border-radius: 5px; background: var(--grid); overflow: hidden; }
+.weight-bar span { display: block; width: 17%; height: 100%; background: var(--accent); }
+.weight small { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+
+/* blueprint panel */
+.fig {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+  padding: 20px; display: flex; flex-direction: column; gap: 14px;
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 24px 24px; background-position: -1px -1px;
+}
+.fig-cap { font-family: var(--font-mono); font-size: 12px; color: var(--muted); letter-spacing: .04em; }
+.scroll { overflow-x: auto; }
+svg.d { display: block; width: 100%; height: auto; min-width: 560px; }
+svg.m { display: block; width: 100%; height: auto; }
+
+/* svg styling */
+.n { fill: var(--node); stroke: var(--line); stroke-width: 1.5; }
+.n-a { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+.n-w { fill: var(--warm-soft); stroke: var(--warm); stroke-width: 1.5; }
+.n-o { fill: var(--ok-soft); stroke: var(--ok); stroke-width: 1.5; }
+.n-dash { fill: var(--node); stroke: var(--muted); stroke-width: 1.3; stroke-dasharray: 4 3; }
+.bound { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 6 4; }
+.e { fill: none; stroke: var(--muted); stroke-width: 1.6; }
+.e-a { fill: none; stroke: var(--accent); stroke-width: 1.8; }
+.e-w { fill: none; stroke: var(--warm); stroke-width: 1.8; }
+.e-dash { stroke-dasharray: 5 4; }
+.ah { fill: var(--muted); } .ah-a { fill: var(--accent); } .ah-w { fill: var(--warm); }
+.t { fill: var(--fg); font-family: var(--font-body); font-size: 12px; }
+.tb { fill: var(--fg); font-family: var(--font-body); font-size: 14px; font-weight: 700; }
+.ts { fill: var(--muted); font-family: var(--font-body); font-size: 11px; }
+.tm { fill: var(--muted); font-family: var(--font-mono); font-size: 10px; letter-spacing: .04em; }
+.ta { fill: var(--accent); font-family: var(--font-body); font-size: 12px; font-weight: 700; }
+.tw { fill: var(--warm); font-family: var(--font-body); font-size: 12px; font-weight: 700; }
+svg text { dominant-baseline: middle; }
+
+/* lists */
+ul.plain { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 6px; }
+.tasks { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.task { border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; background: var(--panel); font-size: 15px; display: flex; gap: 10px; align-items: flex-start; }
+.task b { font-family: var(--font-mono); color: var(--accent); font-size: 13px; padding-top: 2px; }
+
+/* 1.1 work backward */
+.backward { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; }
+.step { flex: 1 1 150px; min-width: 0; border: 1px solid var(--line); background: var(--node); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 1.55; }
+.step .k { font-family: var(--font-mono); font-size: 11px; color: var(--muted); letter-spacing: .05em; }
+.step.goal { background: var(--ok-soft); border-color: var(--ok); }
+.step.pick { background: var(--accent-soft); border-color: var(--accent); }
+.arrow-row { font-family: var(--font-mono); font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.spectra { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.spec { background: var(--node); border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.spec-title { font-weight: 700; font-size: 14px; }
+.grad { height: 10px; border-radius: 5px; background: linear-gradient(90deg, var(--ok), var(--warm)); }
+.ends { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--muted); }
+.ends span:last-child { text-align: right; }
+.quote { border-left: 3px solid var(--accent); padding: 4px 0 4px 16px; font-size: 17px; }
+.quote small { display: block; color: var(--muted); font-size: 13px; }
+
+/* patterns grid */
+.patterns { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.pat { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.pat h4 { margin: 0; font-size: 16px; display: flex; flex-direction: column; gap: 2px; }
+.pat p { font-size: 14px; line-height: 1.6; }
+.pat .fit { font-size: 13px; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 8px; }
+.pat .fit b { color: var(--fg); font-weight: 500; }
+.pat svg { background: var(--bg); border-radius: 6px; }
+
+.callout { border: 1px solid var(--accent); background: var(--accent-soft); border-radius: 10px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; }
+.callout .eyebrow { color: var(--accent); }
+.callout.warm { border-color: var(--warm); background: var(--warm-soft); }
+.callout.warm .eyebrow { color: var(--warm); }
+
+/* heuristic */
+.vs { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.vs > div { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; min-width: 0; }
+.vs .tag { font-family: var(--font-mono); font-size: 12px; font-weight: 600; }
+.vs .wf .tag { color: var(--ok); } .vs .ag .tag { color: var(--warm); }
+
+/* cost chips */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font-size: 13px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--warm); color: var(--warm); background: var(--warm-soft); }
+
+/* pillars */
+.pillars { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.pillar { background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--accent); border-radius: 6px; padding: 14px; display: flex; flex-direction: column; gap: 8px; min-width: 0; font-size: 14px; line-height: 1.55; }
+.pillar h4 { margin: 0; font-size: 16px; display: flex; flex-direction: column; }
+.pillar .ev { color: var(--muted); font-size: 13px; border-top: 1px dashed var(--line); padding-top: 8px; }
+.split { display: flex; height: 44px; border-radius: 8px; overflow: hidden; font-size: 13px; font-weight: 500; }
+.split div { display: flex; align-items: center; padding: 0 12px; min-width: 0; white-space: nowrap; overflow: hidden; }
+.split .fast { flex: 9; background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); border-radius: 8px 0 0 8px; }
+.split .slow { flex: 1.6; background: var(--warm-soft); color: var(--warm); border: 1px solid var(--warm); border-left: 0; border-radius: 0 8px 8px 0; justify-content: center; }
+.legend { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+
+/* takeaways */
+.takeaways { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.takeaways li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+.takeaways li::before { content: "✓"; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--ok-soft); color: var(--ok); font-size: 13px; font-weight: 700; margin-top: 3px; }
+
+.source { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; }
+.source a { color: var(--accent); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0 0L10 5L0 10z"/></marker>
+    <marker id="ar-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah-a" d="M0 0L10 5L0 10z"/></marker>
+    <marker id="ar-w" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah-w" d="M0 0L10 5L0 10z"/></marker>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">CCARP · Part II · Domain 1</div>
+  <h1>솔루션 설계와 아키텍처 <span class="en">Solution Design &amp; Architecture</span></h1>
+  <p class="lead prose">모호한 비즈니스 문제를 구체적이고 근거 있는 시스템 설계로 바꾸고, 요구사항을 실제로 충족하는 <strong>가장 단순한</strong> 아키텍처를 고르는 능력.</p>
+  <div class="weight"><div class="weight-bar" role="img" aria-label="시험 비중 17%"><span></span></div><small>시험 비중 17%</small></div>
+</header>
+
+<section>
+  <h2>공식 출제 항목 <span class="en">Official task statements</span></h2>
+  <div class="tasks">
+    <div class="task"><b>1.1</b><span>비즈니스 문제를 Claude 기반 AI 솔루션으로 변환</span></div>
+    <div class="task"><b>1.2</b><span>엔드투엔드 아키텍처 설계 (입력 → 처리 → 출력 → 피드백 루프)</span></div>
+    <div class="task"><b>1.3</b><span>적절한 아키텍처 패턴 선택 (워크플로, 에이전트, 증강 LLM)</span></div>
+    <div class="task"><b>1.4</b><span>멀티 에이전트 시스템과 오케스트레이션 전략 설계</span></div>
+    <div class="task"><b>1.5</b><span>복잡한 문제 해결을 위한 분해 기법 적용</span></div>
+    <div class="task"><b>1.6</b><span>비즈니스 가치 축에 맞추기 (효율, 혁신, 생산성, 비용, 성능 SLA)</span></div>
+  </div>
+</section>
+
+<!-- 1.1 -->
+<section>
+  <h2><span class="no">1.1</span>비즈니스 문제를 솔루션으로 <span class="en">Translating business problems</span></h2>
+  <p class="prose">모든 아키텍처는 기술 선택이 아니라 <strong>문제 정의</strong>에서 시작합니다. 주니어 아키텍트가 자주 하는 실수는 잘 만든 프롬프트 하나면 될 일에 에이전트를 쓰거나, 컨텍스트 엔지니어링을 개선하면 될 일에 파인튜닝을 쓰는 것입니다. 원하는 결과에서 거꾸로 따라가며 아래 질문에 답한 뒤에야 패턴을 고릅니다.</p>
+
+  <div class="fig">
+    <div class="fig-cap">도면 1 · 결과에서 거꾸로 설계하기</div>
+    <div class="arrow-row"><span>← 결과에서 출발해 거꾸로 질문</span><span>마지막에 패턴 선택</span></div>
+    <div class="backward">
+      <div class="step goal"><span class="k">출발점 · 결과</span><strong>사람이 지금 내리는 결정이나 만드는 산출물은? '좋은 결과'의 기준은?</strong></div>
+      <div class="step"><span class="k">필요한 정보</span>그 결과에 필요한 정보는 무엇이고 지금 어디에 있나? (문서, DB, API, 암묵지)</div>
+      <div class="step"><span class="k">오류 허용도</span>허용 가능한 오류율은? 오류 한 번의 비용은?</div>
+      <div class="step"><span class="k">물량 · 지연</span>처리량과 응답 시간 요구사항은?</div>
+      <div class="step pick"><span class="k">그 다음에야</span><strong>패턴 선택</strong></div>
+    </div>
+    <div class="spectra">
+      <div class="spec">
+        <span class="spec-title">오류의 비용 → 감당할 수 있는 위험</span>
+        <div class="grad"></div>
+        <div class="ends"><span>초안 작성 보조<br>가끔 사람이 고치면 됨 · 위험 감당 큼</span><span>대출 자동 승인<br>오류 비용 큼 · 위험 감당 작음</span></div>
+      </div>
+      <div class="spec">
+        <span class="spec-title">처리량 → 파이프라인이 감당할 수 있는 무게</span>
+        <div class="grad"></div>
+        <div class="ends"><span>하루 10건<br>느리고 비싸고 검토가 많은 파이프라인도 OK</span><span>하루 10,000건<br>그런 파이프라인은 불가</span></div>
+      </div>
+    </div>
+  </div>
+
+  <p class="quote prose">"가능한 가장 단순한 해법을 찾고, 필요할 때만 복잡도를 높여라."<small>Anthropic 에이전트 설계 가이드. 에이전트 시스템은 지연과 비용을 내주고 유연성을 얻습니다. 이 거래는 작업을 미리 예측할 수 <strong>정말로</strong> 없을 때만 이득입니다.</small></p>
+</section>
+
+<!-- 1.2 -->
+<section>
+  <h2><span class="no">1.2</span>엔드투엔드 아키텍처 <span class="en">input → processing → output → feedback</span></h2>
+  <p class="prose">단순하든 복잡하든 모든 프로덕션 Claude 시스템은 네 단계로 설명할 수 있습니다. 이 루프를 그리고 설명하는 능력이 가장 자주 출제되는 아키텍처 역량 중 하나입니다.</p>
+
+  <div class="fig">
+    <div class="fig-cap">도면 2 · 4단계 루프</div>
+    <div class="scroll">
+    <svg class="d" viewBox="0 0 720 270" role="img" aria-label="입력, 처리, 출력이 순서대로 이어지고 출력에서 피드백 루프를 거쳐 처리로 돌아오는 도식">
+      <rect class="n" x="20" y="20" width="200" height="104" rx="8"/>
+      <text class="tm" x="36" y="40">STAGE 1</text>
+      <text class="tb" x="36" y="62">입력 Input</text>
+      <text class="ts" x="36" y="86">사용자 메시지 · 웹훅 · 배치 · 업로드</text>
+      <text class="ts" x="36" y="106">Claude 전에: 정규화 · PII 처리</text>
+
+      <rect class="n-a" x="260" y="20" width="200" height="104" rx="8"/>
+      <text class="tm" x="276" y="40">STAGE 2</text>
+      <text class="tb" x="276" y="62">처리 Processing</text>
+      <text class="ts" x="276" y="86">모델 호출 · 검색 · 도구/에이전트</text>
+      <text class="ts" x="276" y="106">생성 전후 가드레일 · 안전 점검</text>
+
+      <rect class="n" x="500" y="20" width="200" height="104" rx="8"/>
+      <text class="tm" x="516" y="40">STAGE 3</text>
+      <text class="tb" x="516" y="62">출력 Output</text>
+      <text class="ts" x="516" y="86">화면 표시 · DB 기록 · 후속 동작</text>
+      <text class="ts" x="516" y="106">생성과 실행 사이 사람 승인 게이트?</text>
+
+      <path class="e" d="M220 72 H256" marker-end="url(#ar)"/>
+      <path class="e" d="M460 72 H496" marker-end="url(#ar)"/>
+
+      <path class="e-w" d="M600 124 V214 H462"/>
+      <rect class="n-w" x="258" y="186" width="204" height="56" rx="8"/>
+      <text class="tm" x="274" y="202">STAGE 4</text>
+      <text class="tb" x="274" y="224">피드백 루프 Feedback</text>
+      <path class="e-w" d="M360 186 V128" marker-end="url(#ar-w)"/>
+      <text class="tw" x="372" y="156">프롬프트 · 검색 · 평가 개선</text>
+      <text class="ts" x="480" y="234">평점 · 수정량 · 평가 로그 · 에스컬레이션 기록</text>
+    </svg>
+    </div>
+  </div>
+
+  <div class="patterns">
+    <div class="pat"><h4>입력 <span class="en">Input</span></h4><p>데이터가 어떻게 들어오나? 사용자 메시지, 웹훅, 예약 배치, 문서 업로드. Claude에 닿기 전 정규화와 PII 처리는 무엇을 하나?</p></div>
+    <div class="pat"><h4>처리 <span class="en">Processing</span></h4><p>핵심 추론 계층. 모델 호출, 검색, 도구·에이전트 오케스트레이션, 생성 전후에 적용하는 가드레일과 안전 점검.</p></div>
+    <div class="pat"><h4>출력 <span class="en">Output</span></h4><p>결과 전달 방식. 사용자 화면, DB 기록, 후속 동작(이메일 발송, 환불, 티켓 업데이트). 생성과 실행 사이에 사람 승인 게이트가 있는가?</p></div>
+    <div class="pat"><h4>피드백 루프 <span class="en">Feedback loop</span></h4><p>잘 동작했는지 아는 방법. 명시적 평점, 암묵적 신호(사람이 초안을 많이 고쳤나?), 평가 트레이스, 에스컬레이션·오버라이드 기록. 이 신호가 프롬프트·검색·평가 개선으로 돌아갑니다.</p></div>
+  </div>
+
+  <div class="callout warm">
+    <span class="eyebrow">출력에서 끝나면 불완전</span>
+    <p>피드백 장치 없이 '출력'에서 멈춘 설계는 이 시험 기준으로 미완성입니다. Domain 4(평가)와 Domain 6(라이프사이클 관리)은 피드백 루프가 <strong>첫날부터</strong> 존재하고 계측된다고 가정합니다. 나중에 덧붙이는 것이 아닙니다.</p>
+  </div>
+</section>
+
+<!-- 1.3 -->
+<section>
+  <h2><span class="no">1.3</span>아키텍처 패턴 <span class="en">augmented LLM · workflow · agent</span></h2>
+  <p class="prose">Anthropic의 "Building Effective Agents" 가이드가 정한 용어를 정확히 써야 합니다. 핵심 구분은 이렇습니다. <strong>워크플로</strong>는 내가 작성한 코드가 LLM 호출들을 조율하고, <strong>에이전트</strong>는 LLM이 루프 안에서 다음 단계와 도구 호출을 스스로 결정합니다.</p>
+
+  <div class="fig">
+    <div class="fig-cap">도면 3 · 복잡도 사다리 (필요할 때만 한 칸씩)</div>
+    <div class="scroll">
+    <svg class="d" viewBox="0 0 720 240" role="img" aria-label="증강 LLM, 워크플로, 에이전트 순으로 올라가는 계단. 위로 갈수록 유연성과 비용, 지연이 증가">
+      <path class="e-w" d="M30 220 V24" marker-end="url(#ar-w)"/>
+      <text class="tw" x="40" y="22">복잡도 · 비용 · 지연 ↑ / 유연성 ↑</text>
+
+      <rect class="n-o" x="60" y="150" width="200" height="74" rx="6"/>
+      <text class="tb" x="76" y="172">증강 LLM</text>
+      <text class="ts" x="76" y="194">단일 호출 + 검색 · 도구 · 메모리</text>
+      <text class="ts" x="76" y="212">대부분의 프로덕션은 여기서 충분</text>
+
+      <rect class="n-a" x="270" y="100" width="200" height="124" rx="6"/>
+      <text class="tb" x="286" y="122">워크플로</text>
+      <text class="ts" x="286" y="144">미리 정한 코드 경로</text>
+      <text class="ts" x="286" y="162">코드가 흐름을 결정</text>
+
+      <rect class="n-w" x="480" y="50" width="200" height="174" rx="6"/>
+      <text class="tb" x="496" y="72">에이전트</text>
+      <text class="ts" x="496" y="94">모델이 흐름을 결정</text>
+      <text class="ts" x="496" y="112">단계 수를 미리 알 수 없을 때</text>
+
+      <path class="e e-dash" d="M160 140 C160 110 200 96 262 96" marker-end="url(#ar)"/>
+      <text class="ts" x="150" y="96" text-anchor="end">부족할 때만</text>
+      <path class="e e-dash" d="M370 90 C370 60 410 46 472 46" marker-end="url(#ar)"/>
+      <text class="ts" x="360" y="46" text-anchor="end">부족할 때만</text>
+    </svg>
+    </div>
+  </div>
+
+  <h3>증강 LLM <span class="en">The augmented LLM · 기본 구성 블록</span></h3>
+  <p class="prose">검색, 도구, 메모리로 보강한 Claude 호출 한 번. 지원 매크로 생성기, 문서 요약기, 분류 단계 같은 대부분의 프로덕션 사례는 이 이상이 필요 없습니다. 오케스트레이션을 더하기 전에 좋은 인컨텍스트 예시를 곁들인 증강 LLM 호출로 이미 해결되는지 먼저 물어보세요.</p>
+
+  <h3>워크플로 패턴 <span class="en">Workflow patterns · 미리 정의된 코드 경로</span></h3>
+  <div class="patterns">
+
+    <div class="pat">
+      <h4>프롬프트 체이닝 <span class="en">Prompt chaining</span></h4>
+      <svg class="m" viewBox="0 0 300 130" role="img" aria-label="입력, LLM 1, 게이트, LLM 2, 출력의 직렬 연결. 게이트 실패 시 종료">
+        <rect class="n" x="6" y="50" width="34" height="28" rx="6"/><text class="t" x="23" y="64" text-anchor="middle">입력</text>
+        <rect class="n-a" x="56" y="50" width="54" height="28" rx="6"/><text class="t" x="83" y="64" text-anchor="middle">LLM 1</text>
+        <path class="n-o" d="M135 50 L149 64 L135 78 L121 64 Z"/><text class="tm" x="135" y="40" text-anchor="middle">GATE</text>
+        <rect class="n-a" x="164" y="50" width="54" height="28" rx="6"/><text class="t" x="191" y="64" text-anchor="middle">LLM 2</text>
+        <rect class="n" x="236" y="50" width="56" height="28" rx="6"/><text class="t" x="264" y="64" text-anchor="middle">출력</text>
+        <path class="e" d="M40 64 H52" marker-end="url(#ar)"/>
+        <path class="e" d="M110 64 H118" marker-end="url(#ar)"/>
+        <path class="e" d="M149 64 H160" marker-end="url(#ar)"/>
+        <path class="e" d="M218 64 H232" marker-end="url(#ar)"/>
+        <path class="e-w" d="M135 78 V102" marker-end="url(#ar-w)"/>
+        <text class="ts" x="135" y="116" text-anchor="middle">점검 실패 → 중단</text>
+      </svg>
+      <p>작업을 고정된 순서의 LLM 호출로 나눕니다. 각 단계는 이전 단계 출력을 처리하고, 단계 사이에 코드로 된 '게이트' 점검을 둘 수 있습니다.</p>
+      <div class="fit"><b>적합:</b> 깔끔하고 예측 가능하게 나뉘는 작업. 예) 개요 작성 → 기준에 맞는지 검증 → 전체 문서 작성</div>
+    </div>
+
+    <div class="pat">
+      <h4>라우팅 <span class="en">Routing</span></h4>
+      <svg class="m" viewBox="0 0 300 130" role="img" aria-label="입력을 분류기가 Haiku, Sonnet, Opus 중 하나로 보냄">
+        <rect class="n" x="6" y="50" width="34" height="28" rx="6"/><text class="t" x="23" y="64" text-anchor="middle">입력</text>
+        <rect class="n-o" x="56" y="50" width="60" height="28" rx="6"/><text class="t" x="86" y="64" text-anchor="middle">분류</text>
+        <rect class="n-a" x="170" y="8" width="122" height="28" rx="6"/><text class="t" x="231" y="22" text-anchor="middle">Haiku · 단순 FAQ</text>
+        <rect class="n-a" x="170" y="50" width="122" height="28" rx="6"/><text class="t" x="231" y="64" text-anchor="middle">전용 프롬프트 B</text>
+        <rect class="n-a" x="170" y="92" width="122" height="28" rx="6"/><text class="t" x="231" y="106" text-anchor="middle">Sonnet/Opus · 복잡</text>
+        <path class="e" d="M40 64 H52" marker-end="url(#ar)"/>
+        <path class="e" d="M116 64 C140 64 140 22 166 22" marker-end="url(#ar)"/>
+        <path class="e" d="M116 64 H166" marker-end="url(#ar)"/>
+        <path class="e" d="M116 64 C140 64 140 106 166 106" marker-end="url(#ar)"/>
+      </svg>
+      <p>입력을 먼저 분류한 뒤, 그에 특화된 하위 프롬프트나 모델로 보냅니다.</p>
+      <div class="fit"><b>적합:</b> 서로 다른 프롬프트나 모델 크기로 처리하는 게 나은 뚜렷한 입력 범주. 예) 단순 FAQ는 Haiku로, 복잡한 에스컬레이션은 Sonnet이나 Opus로</div>
+    </div>
+
+    <div class="pat">
+      <h4>병렬화 · 분할 <span class="en">Parallelization (sectioning)</span></h4>
+      <svg class="m" viewBox="0 0 300 130" role="img" aria-label="입력을 서로 다른 하위 작업 세 개로 나눠 병렬 처리 후 코드로 집계">
+        <rect class="n" x="6" y="50" width="34" height="28" rx="6"/><text class="t" x="23" y="64" text-anchor="middle">입력</text>
+        <rect class="n-a" x="66" y="8" width="88" height="28" rx="6"/><text class="t" x="110" y="22" text-anchor="middle">본 응답</text>
+        <rect class="n-a" x="66" y="50" width="88" height="28" rx="6"/><text class="t" x="110" y="64" text-anchor="middle">가드레일 점검</text>
+        <rect class="n-a" x="66" y="92" width="88" height="28" rx="6"/><text class="t" x="110" y="106" text-anchor="middle">다른 측면</text>
+        <rect class="n-o" x="180" y="50" width="64" height="28" rx="6"/><text class="t" x="212" y="64" text-anchor="middle">코드 집계</text>
+        <rect class="n" x="258" y="50" width="36" height="28" rx="6"/><text class="t" x="276" y="64" text-anchor="middle">출력</text>
+        <path class="e" d="M40 64 C52 64 52 22 62 22" marker-end="url(#ar)"/>
+        <path class="e" d="M40 64 H62" marker-end="url(#ar)"/>
+        <path class="e" d="M40 64 C52 64 52 106 62 106" marker-end="url(#ar)"/>
+        <path class="e" d="M154 22 C166 22 166 64 176 64" marker-end="url(#ar)"/>
+        <path class="e" d="M154 64 H176" marker-end="url(#ar)"/>
+        <path class="e" d="M154 106 C166 106 166 64 176 64" marker-end="url(#ar)"/>
+        <path class="e" d="M244 64 H254" marker-end="url(#ar)"/>
+      </svg>
+      <p>독립적인 작업을 병렬 하위 작업으로 나누고, 결과는 코드로 합칩니다.</p>
+      <div class="fit"><b>적합:</b> 본 응답과 나란히 도는 가드레일 점검, 여러 측면 평가, 독립적인 문서 섹션</div>
+    </div>
+
+    <div class="pat">
+      <h4>병렬화 · 투표 <span class="en">Parallelization (voting)</span></h4>
+      <svg class="m" viewBox="0 0 300 130" role="img" aria-label="같은 작업을 세 번 실행하고 다수결 또는 임계값으로 결합">
+        <rect class="n" x="6" y="50" width="34" height="28" rx="6"/><text class="t" x="23" y="64" text-anchor="middle">입력</text>
+        <rect class="n-a" x="66" y="8" width="88" height="28" rx="6"/><text class="t" x="110" y="22" text-anchor="middle">같은 작업 #1</text>
+        <rect class="n-a" x="66" y="50" width="88" height="28" rx="6"/><text class="t" x="110" y="64" text-anchor="middle">같은 작업 #2</text>
+        <rect class="n-a" x="66" y="92" width="88" height="28" rx="6"/><text class="t" x="110" y="106" text-anchor="middle">같은 작업 #3</text>
+        <rect class="n-o" x="180" y="50" width="64" height="28" rx="6"/><text class="t" x="212" y="64" text-anchor="middle">투표</text>
+        <text class="tm" x="212" y="92" text-anchor="middle">다수결/임계값</text>
+        <rect class="n" x="258" y="50" width="36" height="28" rx="6"/><text class="t" x="276" y="64" text-anchor="middle">출력</text>
+        <path class="e" d="M40 64 C52 64 52 22 62 22" marker-end="url(#ar)"/>
+        <path class="e" d="M40 64 H62" marker-end="url(#ar)"/>
+        <path class="e" d="M40 64 C52 64 52 106 62 106" marker-end="url(#ar)"/>
+        <path class="e" d="M154 22 C166 22 166 64 176 64" marker-end="url(#ar)"/>
+        <path class="e" d="M154 64 H176" marker-end="url(#ar)"/>
+        <path class="e" d="M154 106 C166 106 166 64 176 64" marker-end="url(#ar)"/>
+        <path class="e" d="M244 64 H254" marker-end="url(#ar)"/>
+      </svg>
+      <p>같은 작업을 여러 번 돌려 다양한 출력을 얻고, 다수결이나 임계값으로 합칩니다.</p>
+      <div class="fit"><b>적합:</b> 독립 프롬프트 여러 개로 하는 코드 취약점 리뷰, 오탐과 미탐의 균형이 필요한 콘텐츠 모더레이션</div>
+    </div>
+
+    <div class="pat">
+      <h4>오케스트레이터-워커 <span class="en">Orchestrator-workers</span></h4>
+      <svg class="m" viewBox="0 0 300 130" role="img" aria-label="오케스트레이터가 실행 중에 작업자 수를 정해 위임하고 종합">
+        <rect class="n-w" x="6" y="50" width="86" height="28" rx="6"/><text class="t" x="49" y="64" text-anchor="middle">오케스트레이터</text>
+        <rect class="n-dash" x="120" y="8" width="70" height="28" rx="6"/><text class="t" x="155" y="22" text-anchor="middle">워커 1</text>
+        <rect class="n-dash" x="120" y="50" width="70" height="28" rx="6"/><text class="t" x="155" y="64" text-anchor="middle">워커 2</text>
+        <rect class="n-dash" x="120" y="92" width="70" height="28" rx="6"/><text class="t" x="155" y="106" text-anchor="middle">워커 n?</text>
+        <rect class="n-w" x="218" y="50" width="76" height="28" rx="6"/><text class="t" x="256" y="64" text-anchor="middle">결과 종합</text>
+        <path class="e" d="M92 64 C106 64 106 22 116 22" marker-end="url(#ar)"/>
+        <path class="e" d="M92 64 H116" marker-end="url(#ar)"/>
+        <path class="e e-dash" d="M92 64 C106 64 106 106 116 106" marker-end="url(#ar)"/>
+        <path class="e" d="M190 22 C204 22 204 64 214 64" marker-end="url(#ar)"/>
+        <path class="e" d="M190 64 H214" marker-end="url(#ar)"/>
+        <path class="e e-dash" d="M190 106 C204 106 204 64 214 64" marker-end="url(#ar)"/>
+      </svg>
+      <p>중앙 LLM 호출이 작업을 <strong>실행 중에</strong> 나눠 워커 호출에 위임하고 결과를 종합합니다. 점선은 미리 알 수 없는 하위 작업입니다.</p>
+      <div class="fit"><b>적합:</b> 하위 작업을 미리 예측할 수 없는 작업. 여러 파일에 걸친 코드 변경, 열린 형태의 리서치와 종합</div>
+    </div>
+
+    <div class="pat">
+      <h4>평가자-최적화자 <span class="en">Evaluator-optimizer</span></h4>
+      <svg class="m" viewBox="0 0 300 130" role="img" aria-label="생성자가 결과를 만들고 평가자가 비평을 돌려주는 루프. 기준을 충족하면 출력">
+        <rect class="n-a" x="24" y="30" width="96" height="40" rx="6"/><text class="t" x="72" y="50" text-anchor="middle">생성 LLM</text>
+        <rect class="n-o" x="180" y="30" width="96" height="40" rx="6"/><text class="t" x="228" y="50" text-anchor="middle">평가 LLM</text>
+        <path class="e" d="M120 40 H176" marker-end="url(#ar)"/>
+        <text class="ts" x="148" y="28" text-anchor="middle">결과물</text>
+        <path class="e-w" d="M180 60 H124" marker-end="url(#ar-w)"/>
+        <text class="tw" x="152" y="80" text-anchor="middle">비평 · 재시도</text>
+        <path class="e" d="M228 70 V100" marker-end="url(#ar)"/>
+        <text class="ts" x="228" y="116" text-anchor="middle">기준 충족 → 출력</text>
+      </svg>
+      <p>한 호출이 생성하고, 다른 호출이 평가·비평합니다. 기준을 충족할 때까지 반복합니다.</p>
+      <div class="fit"><b>적합:</b> 평가 기준이 명확하고 반복 개선의 효과가 분명한 작업. 문학 번역, 여러 차례 검색 후 종합</div>
+    </div>
+  </div>
+
+  <h3>에이전트 <span class="en">Agents · 모델이 제어 흐름을 결정</span></h3>
+  <p class="prose">에이전트는 계획을 세우고, 환경 피드백(도구 결과, 코드 실행 출력)을 보며 도구를 호출하고, 루프 안에서 다음 단계를 스스로 정하는 LLM입니다. 보통 중단 조건(작업 완료, 최대 반복 횟수, 사람 체크포인트)에 닿을 때까지 돕니다.</p>
+
+  <div class="fig">
+    <div class="fig-cap">도면 4 · 에이전트 루프</div>
+    <div class="scroll">
+    <svg class="d" viewBox="0 0 720 230" role="img" aria-label="사람이 목표를 주면 LLM이 환경에 행동하고 피드백을 받는 루프를 돌다가 중단 조건에서 멈춤">
+      <rect class="n" x="20" y="66" width="120" height="48" rx="8"/>
+      <text class="tb" x="80" y="90" text-anchor="middle">사람 · 목표</text>
+      <path class="e" d="M140 90 H266" marker-end="url(#ar)"/>
+      <text class="ts" x="203" y="78" text-anchor="middle">작업 지시</text>
+
+      <rect class="n-w" x="270" y="56" width="170" height="68" rx="8"/>
+      <text class="tb" x="355" y="82" text-anchor="middle">LLM (에이전트)</text>
+      <text class="ts" x="355" y="104" text-anchor="middle">계획 · 다음 단계 결정</text>
+      <path class="e-w" d="M320 56 C320 14 390 14 390 52" marker-end="url(#ar-w)"/>
+      <text class="tw" x="355" y="14" text-anchor="middle">반복</text>
+
+      <rect class="n" x="560" y="56" width="140" height="68" rx="8"/>
+      <text class="tb" x="630" y="82" text-anchor="middle">환경</text>
+      <text class="ts" x="630" y="104" text-anchor="middle">도구 · 코드 실행</text>
+
+      <path class="e-a" d="M440 76 H556" marker-end="url(#ar-a)"/>
+      <text class="ta" x="498" y="64" text-anchor="middle">행동 (도구 호출)</text>
+      <path class="e" d="M560 106 H444" marker-end="url(#ar)"/>
+      <text class="ts" x="500" y="142" text-anchor="middle">피드백: 도구 결과, 실행 출력</text>
+
+      <path class="e" d="M355 124 V168" marker-end="url(#ar)"/>
+      <rect class="n-o" x="215" y="172" width="280" height="44" rx="8"/>
+      <text class="t" x="355" y="194" text-anchor="middle">중단: 완료 · 최대 반복 · 사람 체크포인트</text>
+    </svg>
+    </div>
+    <div class="chips"><span class="chip">지연 증가</span><span class="chip">토큰 비용 증가</span><span class="chip">여러 턴에 걸친 오류 누적</span></div>
+    <p style="font-size:14px;color:var(--muted)">에이전트는 단계 수를 미리 알 수 없는 열린 문제, 그리고 범위가 제한되고 모니터링되는 환경에서 모델의 판단을 믿을 수 있을 때 적합합니다. 위의 비용 때문에 Domain 4(평가)와 Domain 5(가드레일)가 존재합니다.</p>
+  </div>
+
+  <div class="callout">
+    <span class="eyebrow">시험 휴리스틱 · 워크플로 vs 에이전트</span>
+    <div class="vs">
+      <div class="wf"><span class="tag">→ 워크플로</span>코드를 쓰기 전에 화이트보드에 의사결정 트리를 그릴 수 있다.</div>
+      <div class="ag"><span class="tag">→ 에이전트</span>단계의 수와 성격이 모델이 진행 중에 발견하는 것에 따라 정말로 달라진다.</div>
+    </div>
+    <p>시나리오가 고정되고 감사 가능한 순서를 설명한다면, '에이전트' 보기가 더 그럴듯해 보여도 보통 워크플로가 정답입니다. 그럴듯함은 함정이지 설계 목표가 아닙니다.</p>
+  </div>
+</section>
+
+<!-- 1.4 -->
+<section>
+  <h2><span class="no">1.4</span>멀티 에이전트와 오케스트레이션 <span class="en">Multi-agent systems</span></h2>
+  <p class="prose">한 에이전트의 컨텍스트가 너무 커지거나, 정말로 독립적인 전문 영역이 필요할 때 멀티 에이전트 설계가 등장합니다. 대표적인 형태는 두 가지입니다.</p>
+
+  <div class="patterns">
+    <div class="pat">
+      <h4>오케스트레이터(리드) + 서브에이전트 <span class="en">Orchestrator + subagents</span></h4>
+      <svg class="m" viewBox="0 0 340 210" role="img" aria-label="리드 에이전트가 각자 도구와 컨텍스트를 가진 서브에이전트 셋에 작업을 나눠주고 결과를 종합">
+        <rect class="n-w" x="110" y="12" width="120" height="44" rx="8"/>
+        <text class="tb" x="170" y="28" text-anchor="middle">리드 에이전트</text>
+        <text class="ts" x="170" y="45" text-anchor="middle">분해 · 배분 · 종합</text>
+        <path class="e" d="M140 56 C140 90 60 90 60 126" marker-end="url(#ar)"/>
+        <path class="e" d="M170 56 V126" marker-end="url(#ar)"/>
+        <path class="e" d="M200 56 C200 90 280 90 280 126" marker-end="url(#ar)"/>
+        <text class="tm" x="178" y="96">간결한 handoff</text>
+        <rect class="n-a" x="10" y="130" width="100" height="62" rx="8"/>
+        <text class="t" x="60" y="148" text-anchor="middle">서브에이전트 A</text>
+        <text class="ts" x="60" y="166" text-anchor="middle">자체 도구</text>
+        <text class="ts" x="60" y="182" text-anchor="middle">자체 컨텍스트</text>
+        <rect class="n-a" x="120" y="130" width="100" height="62" rx="8"/>
+        <text class="t" x="170" y="148" text-anchor="middle">서브에이전트 B</text>
+        <text class="ts" x="170" y="166" text-anchor="middle">자체 도구</text>
+        <text class="ts" x="170" y="182" text-anchor="middle">자체 컨텍스트</text>
+        <rect class="n-a" x="230" y="130" width="100" height="62" rx="8"/>
+        <text class="t" x="280" y="148" text-anchor="middle">서브에이전트 C</text>
+        <text class="ts" x="280" y="166" text-anchor="middle">자체 도구</text>
+        <text class="ts" x="280" y="182" text-anchor="middle">자체 컨텍스트</text>
+      </svg>
+      <p>리드가 목표를 나누고, 도구와 컨텍스트 창 범위를 좁게 정한 서브에이전트에 보낸 뒤 결과를 종합합니다. 각 서브에이전트의 컨텍스트가 깨끗하게 유지되고 병렬 실행이 가능합니다.</p>
+      <div class="fit"><b>대가:</b> 조율 오버헤드. 원본 컨텍스트를 통째로 넘기지 말고 간결하고 구조화된 handoff를 넘겨야 함</div>
+    </div>
+
+    <div class="pat">
+      <h4>P2P · 에이전트 간 통신 <span class="en">Peer-to-peer / agent-to-agent</span></h4>
+      <svg class="m" viewBox="0 0 340 210" role="img" aria-label="서로 다른 조직 경계 안의 에이전트들이 공유 오케스트레이터 없이 정의된 프로토콜로 통신">
+        <rect class="bound" x="8" y="20" width="136" height="176" rx="10"/>
+        <text class="tm" x="20" y="36">조직 / 팀 A</text>
+        <rect class="bound" x="196" y="20" width="136" height="176" rx="10"/>
+        <text class="tm" x="208" y="36">조직 / 팀 B</text>
+        <rect class="n-a" x="26" y="88" width="100" height="44" rx="8"/>
+        <text class="t" x="76" y="110" text-anchor="middle">에이전트 A</text>
+        <rect class="n-a" x="214" y="88" width="100" height="44" rx="8"/>
+        <text class="t" x="264" y="110" text-anchor="middle">에이전트 B</text>
+        <path class="e-a" d="M128 104 H210" marker-end="url(#ar-a)"/>
+        <path class="e-a" d="M212 118 H130" marker-end="url(#ar-a)"/>
+        <text class="ta" x="170" y="150" text-anchor="middle">정의된</text>
+        <text class="ta" x="170" y="166" text-anchor="middle">프로토콜</text>
+      </svg>
+      <p>서로 다른 팀이나 조직이 소유할 수 있는 독립 에이전트들이 공유 오케스트레이터 없이 정의된 프로토콜로 소통합니다.</p>
+      <div class="fit"><b>적합:</b> 에이전트가 신뢰 경계나 조직 경계를 넘나들 때</div>
+    </div>
+  </div>
+
+  <div class="callout warm">
+    <span class="eyebrow">멀티 에이전트의 실제 비용</span>
+    <div class="chips"><span class="chip">서브에이전트 호출마다 별도 과금</span><span class="chip">서브에이전트 멈춤</span><span class="chip">서브에이전트 출력 충돌</span><span class="chip">재귀 위임 폭주</span></div>
+    <p>한 에이전트의 컨텍스트나 도구 범위가 정말로 감당 불가능해질 때만 멀티 에이전트를 정당화하세요. 그렇지 않으면 도구를 잘 갖춘 단일 에이전트나 워크플로가 더 안정적이고 저렴합니다.</p>
+  </div>
+</section>
+
+<!-- 1.5 -->
+<section>
+  <h2><span class="no">1.5</span>복잡한 문제의 분해 기법 <span class="en">Decomposition techniques</span></h2>
+  <p class="prose">분해는 비용, 지연, 신뢰성을 동시에 제어하는 아키텍트의 핵심 레버입니다.</p>
+
+  <div class="patterns">
+    <div class="pat">
+      <h4>기능 분해 <span class="en">Functional decomposition</span></h4>
+      <svg class="m" viewBox="0 0 300 120" role="img" aria-label="검색, 추론, 형식화 단계로 나누고 각 단계에 맞는 크기의 모델 사용">
+        <rect class="n-a" x="8" y="40" width="80" height="34" rx="6"/><text class="t" x="48" y="57" text-anchor="middle">검색</text>
+        <rect class="n-w" x="110" y="40" width="80" height="34" rx="6"/><text class="t" x="150" y="57" text-anchor="middle">추론</text>
+        <rect class="n-a" x="212" y="40" width="80" height="34" rx="6"/><text class="t" x="252" y="57" text-anchor="middle">형식화</text>
+        <path class="e" d="M88 57 H106" marker-end="url(#ar)"/>
+        <path class="e" d="M190 57 H208" marker-end="url(#ar)"/>
+        <text class="tm" x="48" y="92" text-anchor="middle">작은 모델</text>
+        <text class="tm" x="150" y="92" text-anchor="middle">필요한 만큼</text>
+        <text class="tm" x="252" y="92" text-anchor="middle">작은 모델</text>
+      </svg>
+      <p>기능별로 나눠(검색 → 추론 → 형식화) 각 단계가 충족 가능한 가장 저렴한 모델과 가장 단순한 프롬프트를 쓰게 합니다.</p>
+    </div>
+
+    <div class="pat">
+      <h4>데이터 분해 <span class="en">Data decomposition</span></h4>
+      <svg class="m" viewBox="0 0 300 120" role="img" aria-label="큰 입력을 조각으로 나눠 독립 처리한 뒤 병합">
+        <rect class="n" x="8" y="22" width="56" height="76" rx="6"/><text class="t" x="36" y="60" text-anchor="middle">긴 문서</text>
+        <rect class="n-a" x="96" y="14" width="64" height="24" rx="5"/><text class="t" x="128" y="26" text-anchor="middle">조각 1</text>
+        <rect class="n-a" x="96" y="48" width="64" height="24" rx="5"/><text class="t" x="128" y="60" text-anchor="middle">조각 2</text>
+        <rect class="n-a" x="96" y="82" width="64" height="24" rx="5"/><text class="t" x="128" y="94" text-anchor="middle">조각 3</text>
+        <rect class="n-o" x="198" y="44" width="94" height="32" rx="6"/><text class="t" x="245" y="60" text-anchor="middle">병합</text>
+        <path class="e" d="M64 40 L92 26" marker-end="url(#ar)"/>
+        <path class="e" d="M64 60 H92" marker-end="url(#ar)"/>
+        <path class="e" d="M64 80 L92 94" marker-end="url(#ar)"/>
+        <path class="e" d="M160 26 L194 54" marker-end="url(#ar)"/>
+        <path class="e" d="M160 60 H194" marker-end="url(#ar)"/>
+        <path class="e" d="M160 94 L194 66" marker-end="url(#ar)"/>
+      </svg>
+      <p>긴 문서나 큰 데이터셋을 독립 처리 가능한 조각으로 나눈 뒤 합칩니다. 지연을 내주고 병렬성을 얻으며, 컨텍스트 창 한계와 컨텍스트 열화(context rot)를 피합니다.</p>
+    </div>
+
+    <div class="pat">
+      <h4>신뢰도 기반 에스컬레이션 <span class="en">Confidence-gated escalation</span></h4>
+      <svg class="m" viewBox="0 0 300 120" role="img" aria-label="저렴한 경로를 먼저 시도하고 신뢰도가 낮거나 위험이 크면 큰 모델이나 사람 검토로 올림">
+        <rect class="n-a" x="8" y="42" width="84" height="34" rx="6"/><text class="t" x="50" y="53" text-anchor="middle">작은 모델</text><text class="ts" x="50" y="68" text-anchor="middle">짧은 프롬프트</text>
+        <path class="n-o" d="M140 36 L164 59 L140 82 L116 59 Z"/><text class="t" x="140" y="59" text-anchor="middle">확신?</text>
+        <path class="e" d="M92 59 H112" marker-end="url(#ar)"/>
+        <rect class="n-o" x="206" y="8" width="86" height="28" rx="6"/><text class="t" x="249" y="22" text-anchor="middle">높음 → 완료</text>
+        <rect class="n-w" x="206" y="80" width="86" height="34" rx="6"/><text class="t" x="249" y="91" text-anchor="middle">큰 모델</text><text class="ts" x="249" y="106" text-anchor="middle">또는 사람 검토</text>
+        <path class="e" d="M164 59 C184 59 184 22 202 22" marker-end="url(#ar)"/>
+        <path class="e-w" d="M164 59 C184 59 184 97 202 97" marker-end="url(#ar-w)"/>
+        <text class="tw" x="176" y="112" text-anchor="end">낮음/고위험</text>
+      </svg>
+      <p>빠르고 저렴한 경로를 먼저 시도하고, 신뢰도가 낮거나 위험이 클 때만 더 큰 모델이나 사람 검토로 올립니다.</p>
+    </div>
+
+    <div class="pat">
+      <h4>체크포인트 <span class="en">Checkpointing</span></h4>
+      <svg class="m" viewBox="0 0 300 120" role="img" aria-label="LLM 단계 사이에 스키마 검증과 업무 규칙 검사 같은 코드 게이트를 넣어 오류가 다음 단계로 번지기 전에 잡음">
+        <rect class="n-a" x="8" y="42" width="56" height="34" rx="6"/><text class="t" x="36" y="59" text-anchor="middle">LLM</text>
+        <rect class="n-o" x="84" y="42" width="66" height="34" rx="6"/><text class="t" x="117" y="53" text-anchor="middle">스키마</text><text class="ts" x="117" y="68" text-anchor="middle">검증</text>
+        <rect class="n-a" x="170" y="42" width="56" height="34" rx="6"/><text class="t" x="198" y="59" text-anchor="middle">LLM</text>
+        <rect class="n-o" x="242" y="42" width="52" height="34" rx="6"/><text class="t" x="268" y="53" text-anchor="middle">규칙</text><text class="ts" x="268" y="68" text-anchor="middle">검사</text>
+        <path class="e" d="M64 59 H80" marker-end="url(#ar)"/>
+        <path class="e" d="M150 59 H166" marker-end="url(#ar)"/>
+        <path class="e" d="M226 59 H238" marker-end="url(#ar)"/>
+        <path class="e-w" d="M117 76 V98" marker-end="url(#ar-w)"/>
+        <text class="tw" x="117" y="112" text-anchor="middle">여기서 차단</text>
+        <text class="tm" x="150" y="22" text-anchor="middle">결정적인 코드 게이트</text>
+      </svg>
+      <p>LLM 단계 사이에 결정적인 코드 기반 검증 게이트(스키마 검증, 업무 규칙 검사)를 넣어, 오류가 다음 단계로 번지기 전에 잡습니다.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 1.6 -->
+<section>
+  <h2><span class="no">1.6</span>비즈니스 가치 축에 맞추기 <span class="en">Business value pillars</span></h2>
+  <p class="prose">시험은 아키텍트가 설계를 기술 용어뿐 아니라 비즈니스 용어로 정당화하기를 기대합니다. 모든 설계 결정을 아래 축 중 하나 이상에 연결하는 연습을 하세요.</p>
+
+  <div class="pillars">
+    <div class="pillar"><h4>효율 <span class="en">Efficiency</span></h4><span>같은 일을 더 적은 사람 시간이나 비용으로</span><span class="ev">평균 처리 시간 감소, 티켓 물량당 필요 인력(FTE) 감소</span></div>
+    <div class="pillar"><h4>혁신 <span class="en">Transformation</span></h4><span>이전엔 불가능하거나 경제성이 없던 일을 가능하게</span><span class="ev">새 제품 기능, 예전엔 수지가 안 맞던 대규모 개인화</span></div>
+    <div class="pillar"><h4>생산성 <span class="en">Productivity</span></h4><span>기존 인력의 산출을 증폭</span><span class="ev">Claude Code로 주당 더 많은 PR을 내는 엔지니어, 더 많은 계정을 맡는 분석가</span></div>
+    <div class="pillar"><h4>비용 <span class="en">Cost</span></h4><span>시스템 운영에 드는 추론, 인프라, 인력 직접 비용</span><span class="ev">요청당 비용, 해결 티켓당 비용, 사람만 쓰는 기준선 대비 총소유비용</span></div>
+    <div class="pillar"><h4>성능 SLA <span class="en">Performance SLAs</span></h4><span>지연, 가용성, 정확도에 대한 계약상·운영상 약속</span><span class="ev">P95 응답 시간, 가동률, 지원·법무 약속에 묶인 정확도 하한</span></div>
+  </div>
+
+  <div class="fig">
+    <div class="fig-cap">도면 5 · 원문 예시: 어떤 축을 최적화하고 무엇을 의식적으로 내주는가</div>
+    <div class="split" role="img" aria-label="트래픽의 90%는 Claude Haiku 라우팅으로 1초 이내 응답, 가장 어려운 10%는 느리고 큰 모델로">
+      <div class="fast">90% · Claude Haiku + 라우팅 · 1초 이내 응답</div>
+      <div class="slow">10%</div>
+    </div>
+    <div class="legend"><span><strong style="color:var(--accent)">최적화:</strong> 성능 SLA (트래픽 90%가 1초 이내)</span><span><strong style="color:var(--warm)">감수:</strong> 가장 어려운 10%에서 약간의 정확도 손실 → 더 느리고 큰 모델로 라우팅</span></div>
+    <p style="font-size:14px;color:var(--muted)">"SLA가 트래픽 90%에 대해 1초 이내 응답을 요구하므로, 단일 대형 모델 호출 대신 라우팅 계층을 둔 Claude Haiku를 택했다. 가장 어려운 10% 사례의 작은 정확도 손실은 감수하고, 그 사례들은 더 느리고 큰 모델로 보낸다." 좋은 아키텍처 설명은 이렇게 최적화하는 축과 내주는 축을 명시합니다.</p>
+  </div>
+</section>
+
+<section>
+  <h2>핵심 정리 <span class="en">Key takeaways · Domain 1</span></h2>
+  <ul class="takeaways">
+    <li><span>가장 멋진 패턴이 아니라 비즈니스 문제와 요구되는 결정 품질, 지연, 처리량에서 시작한다.</span></li>
+    <li><span>증강 LLM → 워크플로 → 에이전트로 이어지는 복잡도 사다리를 알고, 어디서 멈출지 안다.</span></li>
+    <li><span>모든 아키텍처에는 입력, 처리, 출력, 피드백 루프 네 단계가 모두 필요하다. 피드백이 빠진 설계는 미완성이다.</span></li>
+    <li><span>멀티 에이전트는 비용과 조율 위험을 더한다. 단일 에이전트의 범위가 정말로 감당 불가능할 때만 정당화한다.</span></li>
+    <li><span>각 설계 선택이 어떤 비즈니스 가치 축(효율, 혁신, 생산성, 비용, SLA)에 기여하는지 말할 수 있어야 한다.</span></li>
+  </ul>
+</section>
+
+<p class="source">원문: <a href="https://amitj.me/claude/course/ccarp/2/#page-d1">CCARP 코스 · Domain 1: Solution Design &amp; Architecture</a> 페이지 내용만 한국어로 정리하고 도식화했습니다.</p>
+
+</div>

@@ -1,0 +1,632 @@
+<title>통합과 연동 설계</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: 설계 도면(blueprint) 노트 — 좁은 본문 열 + 모눈 도면 패널. 섹션 번호는 원문 번호 그대로.
+   build_page.py가 이 파일을 <style>에 그대로 넣는다. 색은 모두 토큰으로만 쓴다(라이트/다크 자동). */
+:root {
+  --bg: #f5f7fa;
+  --panel: #ffffff;
+  --fg: #18212e;
+  --muted: #5a6779;
+  --line: #c9d2de;
+  --grid: #e6ebf2;
+  --accent: #2456c9;
+  --accent-soft: #e4ecfb;
+  --warm: #b8621b;
+  --warm-soft: #fbeedf;
+  --ok: #2f7d4f;
+  --ok-soft: #e2f2e8;
+  --node: #ffffff;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f141c; --panel: #161d28; --fg: #e3e8ef; --muted: #96a3b5; --line: #334155; --grid: #1e2734;
+    --accent: #7ea6ff; --accent-soft: #1c2a47; --warm: #f0a35e; --warm-soft: #3a2816;
+    --ok: #6cc892; --ok-soft: #173526; --node: #1b2431; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f141c; --panel: #161d28; --fg: #e3e8ef; --muted: #96a3b5; --line: #334155; --grid: #1e2734;
+  --accent: #7ea6ff; --accent-soft: #1c2a47; --warm: #f0a35e; --warm-soft: #3a2816;
+  --ok: #6cc892; --ok-soft: #173526; --node: #1b2431; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.75;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 80px;
+  word-break: keep-all; overflow-wrap: anywhere;
+}
+.wrap { max-width: 920px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+.prose { max-width: 680px; }
+h1, h2, h3 { text-wrap: balance; line-height: 1.35; margin: 0; }
+h1 { font-size: clamp(28px, 5vw, 40px); font-weight: 700; }
+h2 { font-size: 24px; font-weight: 700; display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+h2 .no { font-family: var(--font-mono); font-size: 15px; color: var(--accent); font-weight: 600; }
+h3 { font-size: 18px; font-weight: 700; }
+p { margin: 0; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.en { font-family: var(--font-mono); font-size: .78em; color: var(--muted); font-weight: 400; }
+section { display: flex; flex-direction: column; gap: 18px; }
+.lead { font-size: 18px; color: var(--muted); }
+
+/* header */
+header { display: flex; flex-direction: column; gap: 14px; }
+.weight { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.weight-bar { width: 220px; max-width: 100%; height: 10px; border-radius: 5px; background: var(--grid); overflow: hidden; }
+.weight-bar span { display: block; height: 100%; background: var(--accent); }
+.weight small { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+
+/* blueprint panel */
+.fig {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+  padding: 20px; display: flex; flex-direction: column; gap: 14px;
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 24px 24px; background-position: -1px -1px;
+}
+.fig-cap { font-family: var(--font-mono); font-size: 12px; color: var(--muted); letter-spacing: .04em; }
+.scroll { overflow-x: auto; }
+svg.d { display: block; width: 100%; height: auto; min-width: 560px; }
+svg.m { display: block; width: 100%; height: auto; }
+
+/* svg styling */
+.n { fill: var(--node); stroke: var(--line); stroke-width: 1.5; }
+.n-a { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+.n-w { fill: var(--warm-soft); stroke: var(--warm); stroke-width: 1.5; }
+.n-o { fill: var(--ok-soft); stroke: var(--ok); stroke-width: 1.5; }
+.n-dash { fill: var(--node); stroke: var(--muted); stroke-width: 1.3; stroke-dasharray: 4 3; }
+.bound { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 6 4; }
+.e { fill: none; stroke: var(--muted); stroke-width: 1.6; }
+.e-a { fill: none; stroke: var(--accent); stroke-width: 1.8; }
+.e-w { fill: none; stroke: var(--warm); stroke-width: 1.8; }
+.e-dash { stroke-dasharray: 5 4; }
+.ah { fill: var(--muted); } .ah-a { fill: var(--accent); } .ah-w { fill: var(--warm); }
+.t { fill: var(--fg); font-family: var(--font-body); font-size: 12px; }
+.tb { fill: var(--fg); font-family: var(--font-body); font-size: 14px; font-weight: 700; }
+.ts { fill: var(--muted); font-family: var(--font-body); font-size: 11px; }
+.tm { fill: var(--muted); font-family: var(--font-mono); font-size: 10px; letter-spacing: .04em; }
+.ta { fill: var(--accent); font-family: var(--font-body); font-size: 12px; font-weight: 700; }
+.tw { fill: var(--warm); font-family: var(--font-body); font-size: 12px; font-weight: 700; }
+svg text { dominant-baseline: middle; }
+
+/* lists */
+ul.plain { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 6px; }
+.tasks { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.task { border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; background: var(--panel); font-size: 15px; display: flex; gap: 10px; align-items: flex-start; }
+.task b { font-family: var(--font-mono); color: var(--accent); font-size: 13px; padding-top: 2px; }
+
+/* 1.1 work backward */
+.backward { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; }
+.step { flex: 1 1 150px; min-width: 0; border: 1px solid var(--line); background: var(--node); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 1.55; }
+.step .k { font-family: var(--font-mono); font-size: 11px; color: var(--muted); letter-spacing: .05em; }
+.step.goal { background: var(--ok-soft); border-color: var(--ok); }
+.step.pick { background: var(--accent-soft); border-color: var(--accent); }
+.arrow-row { font-family: var(--font-mono); font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.spectra { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.spec { background: var(--node); border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.spec-title { font-weight: 700; font-size: 14px; }
+.grad { height: 10px; border-radius: 5px; background: linear-gradient(90deg, var(--ok), var(--warm)); }
+.ends { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--muted); }
+.ends span:last-child { text-align: right; }
+.quote { border-left: 3px solid var(--accent); padding: 4px 0 4px 16px; font-size: 17px; }
+.quote small { display: block; color: var(--muted); font-size: 13px; }
+
+/* patterns grid */
+.patterns { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.pat { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.pat h4 { margin: 0; font-size: 16px; display: flex; flex-direction: column; gap: 2px; }
+.pat p { font-size: 14px; line-height: 1.6; }
+.pat .fit { font-size: 13px; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 8px; }
+.pat .fit b { color: var(--fg); font-weight: 500; }
+.pat svg { background: var(--bg); border-radius: 6px; }
+
+.callout { border: 1px solid var(--accent); background: var(--accent-soft); border-radius: 10px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; }
+.callout .eyebrow { color: var(--accent); }
+.callout.warm { border-color: var(--warm); background: var(--warm-soft); }
+.callout.warm .eyebrow { color: var(--warm); }
+
+/* heuristic */
+.vs { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.vs > div { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; min-width: 0; }
+.vs .tag { font-family: var(--font-mono); font-size: 12px; font-weight: 600; }
+.vs .ok .tag { color: var(--ok); } .vs .warm .tag { color: var(--warm); } .vs .accent .tag { color: var(--accent); }
+
+/* cost chips */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font-size: 13px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--warm); color: var(--warm); background: var(--warm-soft); }
+
+/* pillars */
+.pillars { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.pillar { background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--accent); border-radius: 6px; padding: 14px; display: flex; flex-direction: column; gap: 8px; min-width: 0; font-size: 14px; line-height: 1.55; }
+.pillar h4 { margin: 0; font-size: 16px; display: flex; flex-direction: column; }
+.pillar .ev { color: var(--muted); font-size: 13px; border-top: 1px dashed var(--line); padding-top: 8px; }
+.split { display: flex; height: 44px; border-radius: 8px; overflow: hidden; font-size: 13px; font-weight: 500; }
+.split div { display: flex; align-items: center; padding: 0 12px; min-width: 0; white-space: nowrap; overflow: hidden; }
+.split .fast { flex: 9; background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); border-radius: 8px 0 0 8px; }
+.split .slow { flex: 1.6; background: var(--warm-soft); color: var(--warm); border: 1px solid var(--warm); border-left: 0; border-radius: 0 8px 8px 0; justify-content: center; }
+.legend { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+
+/* takeaways */
+.takeaways { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.takeaways li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+.takeaways li::before { content: "✓"; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--ok-soft); color: var(--ok); font-size: 13px; font-weight: 700; margin-top: 3px; }
+
+.source { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; }
+.source a { color: var(--accent); }
+.note { font-size: 14px; color: var(--muted); }
+.c-accent { color: var(--accent); } .c-warm { color: var(--warm); } .c-ok { color: var(--ok); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0 0L10 5L0 10z"/></marker>
+    <marker id="ar-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah-a" d="M0 0L10 5L0 10z"/></marker>
+    <marker id="ar-w" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah-w" d="M0 0L10 5L0 10z"/></marker>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">CCARP · Part II · Domain 3</div>
+  <h1>통합 <span class="en">Integration</span></h1>
+  <p class="lead prose">Claude를 실제 시스템에 <strong>안전하고, 효율적이고, 관찰 가능하게</strong> 연결하는 능력. 도구, 검색(RAG), 인증, 프로토콜 선택을 다룬다.</p>
+  <div class="weight"><div class="weight-bar" role="img" aria-label="시험 비중 19% (가장 큰 도메인)"><span style="width:19%"></span></div><small>시험 비중 19% (가장 큰 도메인)</small></div>
+</header>
+
+<section>
+<h2>공식 출제 항목 <span class="en">Official task statements</span></h2>
+<div class="tasks"><div class="task"><b>3.1</b><span>도구·에이전트 구성의 기능 과잉(capability bloat) 평가</span></div><div class="task"><b>3.2</b><span>인증·인가 요구사항을 분석해 보안 공백 찾기</span></div><div class="task"><b>3.3</b><span>정확도-지연 시간 트레이드오프 평가와 설정 근거 제시</span></div><div class="task"><b>3.4</b><span>관찰 가능성 문제 분석과 대규모 모니터링 전략 선택</span></div><div class="task"><b>3.5</b><span>알맞은 청킹·인덱싱으로 RAG 파이프라인 설계</span></div><div class="task"><b>3.6</b><span>데이터 형태와 질의 패턴에 맞는 검색 전략 적용</span></div><div class="task"><b>3.7</b><span>연결 프로토콜 평가와 통합 방식 선택 (MCP, API/CLI, 에이전트 간)</span></div><div class="task"><b>3.8</b><span>점진적 탐색 vs. 모놀리식 컨텍스트 전략 평가</span></div></div>
+</section>
+<section>
+<h2><span class="no">3.1</span>도구·에이전트의 기능 과잉 <span class="en">Capability bloat in tool and agent configuration</span></h2>
+<p class="prose"><strong>기능 과잉</strong>은 작업에 필요한 것보다 많은 도구, 권한, 범위를 에이전트에 주는 일이다. 해결 원칙은 <strong>최소 권한</strong>이다. 에이전트는 작업에 꼭 필요한 도구만 가져야 한다.</p>
+<div class="fig"><div class="fig-cap">도면 1 · 과잉이 만드는 세 가지 문제</div>
+<svg class="m" viewBox="0 0 224 162" style="max-width:291px" role="img" aria-label="필요 이상의 도구가 공격 면적 확대, 도구 선택 정확도 저하, 피해 범위 확대의 세 문제로 이어진다.">
+<rect class="n-w" x="6" y="62" width="73" height="38" rx="6"/>
+<text class="t" x="43" y="73" text-anchor="middle">과한 도구</text>
+<text class="ts" x="43" y="89" text-anchor="middle">권한·범위</text>
+<path class="e" d="M79 81 C96 81 96 29 109 29" marker-end="url(#ar)"/>
+<rect class="n-w" x="113" y="10" width="104" height="38" rx="6"/>
+<text class="t" x="165" y="29" text-anchor="middle">공격 면적 ↑</text>
+<path class="e" d="M79 81 C96 81 96 81 109 81" marker-end="url(#ar)"/>
+<rect class="n-w" x="113" y="62" width="104" height="38" rx="6"/>
+<text class="t" x="165" y="81" text-anchor="middle">선택 정확도 ↓</text>
+<path class="e" d="M79 81 C96 81 96 133 109 133" marker-end="url(#ar)"/>
+<rect class="n-w" x="113" y="114" width="104" height="38" rx="6"/>
+<text class="t" x="165" y="133" text-anchor="middle">피해 범위 ↑</text>
+</svg>
+</div>
+<div class="chips"><span class="chip">겹치는 도구 정의 사이에서 헷갈림</span><span class="chip">도구 정의마다 컨텍스트 토큰 소모</span><span class="chip">프롬프트 인젝션 한 번의 파급력 증가</span></div>
+<div class="callout "><span class="eyebrow">공식 가이드의 예시 문항</span>
+<p class="prose">읽고 초안만 쓰는 지원 에이전트에서 <strong>환불/삭제 도구를 빼면</strong> 위험을 모니터링하는 데 그치지 않고 <strong>아예 없앤다</strong>.</p>
+</div>
+<h3>기능 과잉 점검 질문 <span class="en">Practical checks</span></h3>
+<div class="fig"><div class="fig-cap">도면 2 · 점검 흐름</div>
+<svg class="m" viewBox="0 0 415 128" style="max-width:539px" role="img" aria-label="실제 호출 여부, 역할 중복, 에이전트 분리 가능성 순으로 점검한다.">
+<rect class="n" x="6" y="30" width="73" height="38" rx="6"/>
+<text class="t" x="43" y="49" text-anchor="middle">도구 목록</text>
+<path class="e" d="M79 49 H93" marker-end="url(#ar)"/>
+<path class="n-o" d="M146 26 L196 49 L146 72 L97 49 Z"/>
+<text class="t" x="146" y="49" text-anchor="middle">실제로 호출?</text>
+<path class="e" d="M196 49 H210" marker-end="url(#ar)"/>
+<path class="n-o" d="M257 26 L300 49 L257 72 L214 49 Z"/>
+<text class="t" x="257" y="49" text-anchor="middle">역할 중복?</text>
+<path class="e" d="M300 49 H314" marker-end="url(#ar)"/>
+<rect class="n-o" x="318" y="30" width="91" height="38" rx="6"/>
+<text class="t" x="363" y="41" text-anchor="middle">둘로 분리?</text>
+<text class="ts" x="363" y="57" text-anchor="middle">좁은 에이전트</text>
+<path class="e-w" d="M146 72 V94" marker-end="url(#ar-w)"/>
+<text class="ts" x="146" y="108" text-anchor="middle">안 쓰면 제거</text>
+<path class="e-w" d="M257 72 V94" marker-end="url(#ar-w)"/>
+<text class="ts" x="257" y="108" text-anchor="middle">겹치면 통합·제거</text>
+</svg>
+</div>
+</section>
+<section>
+<h2><span class="no">3.2</span>인증과 인가의 공백 <span class="en">Authentication and authorization gaps</span></h2>
+<p class="prose">모든 통합에서 두 질문에 답해야 한다. <strong>인증</strong>은 호출자가 주장하는 그 사람이 맞는가, <strong>인가</strong>는 그 호출자가 이 구체적인 일을 해도 되는가를 묻는다.</p>
+<div class="fig"><div class="fig-cap">도면 3 · 두 질문은 따로 확인한다</div>
+<svg class="m" viewBox="0 0 246 128" style="max-width:320px" role="img" aria-label="호출자 확인(인증) 뒤에 행동 허용 여부(인가)를 확인하고 작업을 실행한다.">
+<rect class="n" x="6" y="30" width="42" height="38" rx="6"/>
+<text class="t" x="27" y="49" text-anchor="middle">호출</text>
+<path class="e" d="M48 49 H62" marker-end="url(#ar)"/>
+<path class="n-o" d="M90 26 L114 49 L90 72 L66 49 Z"/>
+<text class="t" x="90" y="49" text-anchor="middle">인증</text>
+<path class="e" d="M114 49 H128" marker-end="url(#ar)"/>
+<path class="n-o" d="M156 26 L180 49 L156 72 L132 49 Z"/>
+<text class="t" x="156" y="49" text-anchor="middle">인가</text>
+<path class="e" d="M180 49 H194" marker-end="url(#ar)"/>
+<rect class="n-o" x="198" y="30" width="42" height="38" rx="6"/>
+<text class="t" x="219" y="49" text-anchor="middle">실행</text>
+<path class="e-w" d="M90 72 V94" marker-end="url(#ar-w)"/>
+<text class="ts" x="90" y="108" text-anchor="middle">실패 → 거부</text>
+<path class="e-w" d="M156 72 V94" marker-end="url(#ar-w)"/>
+<text class="ts" x="156" y="108" text-anchor="middle">실패 → 거부</text>
+</svg>
+</div>
+<div class="patterns">
+<div class="pat"><h4>과도한 서비스 자격증명 <span class="en">Over-privileged credentials</span></h4><svg class="m" viewBox="0 0 260 68" style="max-width:339px" role="img" aria-label="에이전트가 관리자급 키 하나로 모든 작업에 접근한다.">
+<rect class="n" x="6" y="30" width="66" height="28" rx="6"/>
+<text class="t" x="39" y="44" text-anchor="middle">에이전트</text>
+<path class="e" d="M72 44 H86" marker-end="url(#ar)"/>
+<rect class="n-w" x="90" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="127" y="44" text-anchor="middle">관리자 키</text>
+<path class="e" d="M163 44 H177" marker-end="url(#ar)"/>
+<rect class="n" x="181" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="218" y="44" text-anchor="middle">모든 작업</text>
+</svg><p>에이전트나 MCP 서버가 필요한 행동에 맞춘 범위 제한 자격증명 대신 관리자급 API 키·서비스 계정 하나를 쓴다.</p></div>
+<div class="pat"><h4>사용자 컨텍스트 전달 누락 <span class="en">Missing user-context propagation</span></h4><svg class="m" viewBox="0 0 217 68" style="max-width:282px" role="img" aria-label="사용자 권한이 아니라 앱의 넓은 권한으로 백엔드를 호출한다.">
+<rect class="n" x="6" y="30" width="54" height="28" rx="6"/>
+<text class="t" x="33" y="44" text-anchor="middle">사용자</text>
+<path class="e" d="M60 44 H74" marker-end="url(#ar)"/>
+<rect class="n-w" x="78" y="30" width="61" height="28" rx="6"/>
+<text class="t" x="109" y="44" text-anchor="middle">앱 권한</text>
+<path class="e" d="M139 44 H153" marker-end="url(#ar)"/>
+<rect class="n" x="157" y="30" width="54" height="28" rx="6"/>
+<text class="t" x="184" y="44" text-anchor="middle">백엔드</text>
+</svg><p>백엔드 도구 호출이 요청한 사용자의 실제 권한이 아니라 애플리케이션 자체의 넓은 권한으로 실행된다. 사용자가 접근하면 안 되는 데이터나 행동이 조용히 열린다.</p></div>
+<div class="pat"><h4>인증이 없거나 약한 엔드포인트 <span class="en">Unauthenticated tool / MCP endpoints</span></h4><svg class="m" viewBox="0 0 284 68" style="max-width:370px" role="img" aria-label="호출자를 확인하지 않고 네트워크 위치만 믿는다.">
+<rect class="n" x="6" y="30" width="54" height="28" rx="6"/>
+<text class="t" x="33" y="44" text-anchor="middle">호출자</text>
+<path class="e" d="M60 44 H74" marker-end="url(#ar)"/>
+<rect class="n-dash" x="78" y="30" width="109" height="28" rx="6"/>
+<text class="t" x="133" y="44" text-anchor="middle">네트워크 위치만</text>
+<path class="e" d="M187 44 H201" marker-end="url(#ar)"/>
+<rect class="n" x="205" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="242" y="44" text-anchor="middle">내부 도구</text>
+</svg><p>내부 도구를 호출자 확인 없이 노출하고, 네트워크 위치를 신원 대신 믿는다.</p></div>
+<div class="pat"><h4>행동 경계에서 재인가 없음 <span class="en">No re-authorization at the action boundary</span></h4><svg class="m" viewBox="0 0 311 68" style="max-width:404px" role="img" aria-label="세션 시작에서 한 번 인증하고 오래 뒤의 환불 직전에는 다시 확인하지 않는다.">
+<rect class="n" x="6" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="43" y="44" text-anchor="middle">세션 시작</text>
+<path class="e" d="M79 44 H93" marker-end="url(#ar)"/>
+<rect class="n-o" x="97" y="30" width="68" height="28" rx="6"/>
+<text class="t" x="131" y="44" text-anchor="middle">인증 1회</text>
+<path class="e" d="M166 44 H180" marker-end="url(#ar)"/>
+<rect class="n-dash" x="184" y="30" width="61" height="28" rx="6"/>
+<text class="t" x="214" y="44" text-anchor="middle">긴 루프</text>
+<path class="e" d="M245 44 H259" marker-end="url(#ar)"/>
+<rect class="n-w" x="263" y="30" width="42" height="28" rx="6"/>
+<text class="t" x="284" y="44" text-anchor="middle">환불</text>
+</svg><p>여러 단계의 에이전트 흐름이 시작할 때 한 번만 인증하고, 한참 뒤의 민감한 행동(예: 환불) 직전에는 인가를 다시 확인하지 않는다.</p></div>
+</div>
+<div class="callout warm"><span class="eyebrow">시험 포인트</span>
+<p class="prose">답은 거의 항상 <strong>범위를 좁히고, 민감한 행동에 가장 가까운 곳에서</strong> 신원·권한을 확인하는 것이다. 과도한 권한 위에 로깅을 더하는 것은 답이 아니다. 로깅은 <strong>탐지</strong> 통제이고 <strong>예방</strong> 통제가 아니다.</p>
+</div>
+</section>
+<section>
+<h2><span class="no">3.3</span>정확도와 지연 시간의 트레이드오프 <span class="en">Accuracy-latency trade-offs</span></h2>
+<p class="prose">모든 통합 결정은 정확도·지연·비용의 경계 위 어딘가에 놓인다. 시험은 선택지를 나열하는 데서 그치지 않고 <strong>왜 그 지점을 골랐는지</strong> 정당화하기를 요구한다.</p>
+<div class="fig"><div class="fig-cap">도면 4 · 하나의 제약이 다섯 레버를 결정한다</div>
+<svg class="m" viewBox="0 0 214 266" style="max-width:278px" role="img" aria-label="SLA 또는 비즈니스 제약이 모델 크기, 검색 컨텍스트, 사고, 병렬 호출, 검증 패스 다섯 레버의 설정을 정한다.">
+<rect class="n-w" x="6" y="114" width="95" height="38" rx="6"/>
+<text class="t" x="53" y="125" text-anchor="middle">SLA·비즈니스</text>
+<text class="ts" x="53" y="141" text-anchor="middle">제약</text>
+<path class="e" d="M101 133 C118 133 118 29 131 29" marker-end="url(#ar)"/>
+<rect class="n-a" x="135" y="10" width="73" height="38" rx="6"/>
+<text class="t" x="171" y="29" text-anchor="middle">모델 크기</text>
+<path class="e" d="M101 133 C118 133 118 81 131 81" marker-end="url(#ar)"/>
+<rect class="n-a" x="135" y="62" width="73" height="38" rx="6"/>
+<text class="t" x="171" y="81" text-anchor="middle">검색 양</text>
+<path class="e" d="M101 133 C118 133 118 133 131 133" marker-end="url(#ar)"/>
+<rect class="n-a" x="135" y="114" width="73" height="38" rx="6"/>
+<text class="t" x="171" y="133" text-anchor="middle">사고 깊이</text>
+<path class="e" d="M101 133 C118 133 118 185 131 185" marker-end="url(#ar)"/>
+<rect class="n-a" x="135" y="166" width="73" height="38" rx="6"/>
+<text class="t" x="171" y="185" text-anchor="middle">병렬 호출</text>
+<path class="e" d="M101 133 C118 133 118 237 131 237" marker-end="url(#ar)"/>
+<rect class="n-a" x="135" y="218" width="73" height="38" rx="6"/>
+<text class="t" x="171" y="237" text-anchor="middle">검증 패스</text>
+</svg>
+</div>
+<div class="pillars"><div class="pillar"><h4>더 큰 모델 <span class="en">Larger model</span></h4><span><strong>정확도↑</strong> 어려운 사례에서 추론이 낫고 오류가 적다.</span><span class="ev">비용: 지연과 요청당 $ 증가</span></div><div class="pillar"><h4>더 많은 검색 컨텍스트 (RAG) <span class="en">More retrieved context</span></h4><span><strong>정확도↑</strong> 근거가 늘고 환각이 줄지만 어느 지점까지만이다.</span><span class="ev">비용: 토큰 증가, 첫 토큰 지연, 과다 검색 시 context rot</span></div><div class="pillar"><h4>확장/적응형 사고 <span class="en">Extended / adaptive thinking</span></h4><span><strong>정확도↑</strong> 다단계 추론이 좋아진다.</span><span class="ev">비용: 출력 토큰 증가, 지연 증가</span></div><div class="pillar"><h4>병렬 호출 (투표·앙상블) <span class="en">Parallel calls</span></h4><span><strong>정확도↑</strong> 확신이 높아지고 오탐·미탐이 줄어든다.</span><span class="ev">비용: 비용이 배수로 늘고 조율 지연 추가</span></div><div class="pillar"><h4>추가 가드레일·검증 패스 <span class="en">Guardrail / validation passes</span></h4><span><strong>정확도↑</strong> 안전하지 않거나 형식이 깨진 출력이 줄어든다.</span><span class="ev">비용: 왕복 지연 추가</span></div></div>
+<div class="callout "><span class="eyebrow">방어 가능한 답의 모양</span>
+<p class="quote prose">“검색은 상위 5개 청크로 제한하고 Opus 대신 Sonnet을 쓴다. 제품이 2초 미만 응답을 요구하고, 평가 세트에서 이 코퍼스는 5개 청크를 넘으면 정확도가 더 오르지 않기 때문이다.”<small>SLA(제약) + 선택 + 평가 근거를 함께 말한다.</small></p>
+</div>
+</section>
+<section>
+<h2><span class="no">3.4</span>대규모 관찰 가능성 <span class="en">Observability at scale</span></h2>
+<p class="prose">손으로 검토하는 몇 개의 대화록은 운영 규모에서 관찰 가능성이 아니다. 아래 다섯 가지를 설계에 넣는다.</p>
+<div class="fig"><div class="fig-cap">도면 5 · 관찰 가능성 루프</div>
+<div class="scroll"><svg class="d" viewBox="0 0 720 280" role="img" aria-label="구조화 로그를 모으고, 샘플링 검토와 자동 품질 신호로 평가하고, 드리프트 경보를 내며, 경보가 로그 수집 기준을 개선하도록 되돌아간다.">
+<rect class="n" x="20" y="20" width="200" height="104" rx="8"/>
+<text class="tm" x="36" y="40">STAGE 1</text>
+<text class="tb" x="36" y="62">수집</text>
+<text class="ts" x="36" y="86">구조화 로깅</text>
+<text class="ts" x="36" y="106">캐시·도구 진단</text>
+<rect class="n-a" x="260" y="20" width="200" height="104" rx="8"/>
+<text class="tm" x="276" y="40">STAGE 2</text>
+<text class="tb" x="276" y="62">평가</text>
+<text class="ts" x="276" y="86">위험별 샘플링 검토</text>
+<text class="ts" x="276" y="106">자동 품질 신호</text>
+<path class="e" d="M220 72 H256" marker-end="url(#ar)"/>
+<rect class="n-w" x="500" y="20" width="200" height="104" rx="8"/>
+<text class="tm" x="516" y="40">STAGE 3</text>
+<text class="tb" x="516" y="62">경보</text>
+<text class="ts" x="516" y="86">드리프트 감지</text>
+<text class="ts" x="516" y="106">범위 이탈 알림</text>
+<path class="e" d="M460 72 H496" marker-end="url(#ar)"/>
+<path class="e-w" d="M600 124 V214 H224"/>
+<rect class="n-w" x="18" y="186" width="204" height="56" rx="8"/>
+<text class="tm" x="34" y="202">STAGE 4</text>
+<text class="tb" x="34" y="224">개선 루프</text>
+<path class="e-w" d="M120 186 V128" marker-end="url(#ar-w)"/>
+<text class="tw" x="132" y="156">무엇을 더 기록할지 조정</text>
+<text class="ts" x="120" y="262" text-anchor="middle">사고 후 재구성이 가능해야 한다</text>
+</svg></div>
+</div>
+<div class="pillars"><div class="pillar"><h4>구조화 로깅 <span class="en">Structured logging</span></h4><span>모든 요청/응답 쌍을 토큰 사용량, 지연, 도구 호출, 가드레일 발동과 함께 기록한다. 운영 사고를 사후에 재구성할 수 있어야 한다.</span><span class="ev">근거: 사고 재구성</span></div><div class="pillar"><h4>표본 기반 사람 검토 <span class="en">Sampling-based human review</span></h4><span>통계적으로 의미 있는 비율로, 위험도별 층화한다. 환불 같은 고위험 행동은 <strong>100%</strong>, 일상 채팅은 <strong>1-5%</strong> 표본.</span><span class="ev">지표: 층화 표본 비율</span></div><div class="pillar"><h4>자동 품질 신호 <span class="en">Automated quality signals</span></h4><span>출시 전만이 아니라 운영 중 계속 돈다. 무참조 평가, 가드레일 발동률, 에스컬레이션률, 사용자 피드백(좋아요/싫어요, 수정률).</span><span class="ev">지표: 지속적 신호</span></div><div class="pillar"><h4>드리프트 감지 <span class="en">Drift detection</span></h4><span>품질 신호·지연·비용이 과거 범위를 벗어나면 알린다. 문서 갱신이 RAG 인덱스를 깨는 것 같은 <strong>조용한 퇴행</strong>이 시끄러운 장애보다 훨씬 흔하다.</span><span class="ev">근거: 조용한 퇴행</span></div><div class="pillar"><h4>캐시·도구 진단 <span class="en">Cache / tool diagnostics</span></h4><span>캐시 적중률과 도구 호출 성공/오류율을 부수 지표가 아니라 <strong>일급 운영 지표</strong>로 추적한다.</span><span class="ev">지표: 적중률, 성공/오류율</span></div></div>
+</section>
+<section>
+<h2><span class="no">3.5</span>RAG 파이프라인: 청킹과 인덱싱 <span class="en">Designing a RAG pipeline: chunking and indexing</span></h2>
+<p class="prose"><strong>검색 증강 생성(RAG)</strong>은 모델 내부 지식만 쓰지 않고 특정 코퍼스에 Claude의 답을 근거시킨다. 파이프라인은 다섯 단계이고, 시험은 단계마다 판단력을 묻는다.</p>
+<div class="fig"><div class="fig-cap">도면 6 · RAG 다섯 단계</div>
+<svg class="m" viewBox="0 0 454 78" style="max-width:590px" role="img" aria-label="수집, 청킹, 임베딩, 인덱싱, 검색과 생성의 다섯 단계.">
+<rect class="n" x="6" y="30" width="77" height="38" rx="6"/>
+<text class="t" x="45" y="41" text-anchor="middle">수집</text>
+<text class="ts" x="45" y="57" text-anchor="middle">Ingestion</text>
+<path class="e" d="M83 49 H97" marker-end="url(#ar)"/>
+<rect class="n-w" x="101" y="30" width="71" height="38" rx="6"/>
+<text class="t" x="137" y="41" text-anchor="middle">청킹</text>
+<text class="ts" x="137" y="57" text-anchor="middle">Chunking</text>
+<path class="e" d="M172 49 H186" marker-end="url(#ar)"/>
+<rect class="n-a" x="190" y="30" width="77" height="38" rx="6"/>
+<text class="t" x="229" y="41" text-anchor="middle">임베딩</text>
+<text class="ts" x="229" y="57" text-anchor="middle">Embedding</text>
+<path class="e" d="M268 49 H282" marker-end="url(#ar)"/>
+<rect class="n-w" x="286" y="30" width="71" height="38" rx="6"/>
+<text class="t" x="321" y="41" text-anchor="middle">인덱싱</text>
+<text class="ts" x="321" y="57" text-anchor="middle">Indexing</text>
+<path class="e" d="M356 49 H370" marker-end="url(#ar)"/>
+<rect class="n-o" x="374" y="30" width="73" height="38" rx="6"/>
+<text class="t" x="411" y="41" text-anchor="middle">검색+생성</text>
+<text class="ts" x="411" y="57" text-anchor="middle">Retrieve</text>
+</svg>
+</div>
+<div class="patterns">
+<div class="pat"><h4>수집 <span class="en">Ingestion</span></h4><svg class="m" viewBox="0 0 258 68" style="max-width:335px" role="img" aria-label="PDF·위키·티켓·코드를 구조를 보존해 깨끗한 텍스트로 만든다.">
+<rect class="n" x="6" y="30" width="71" height="28" rx="6"/>
+<text class="t" x="41" y="44" text-anchor="middle">PDF·위키</text>
+<path class="e" d="M77 44 H91" marker-end="url(#ar)"/>
+<rect class="n-a" x="95" y="30" width="42" height="28" rx="6"/>
+<text class="t" x="116" y="44" text-anchor="middle">파싱</text>
+<path class="e" d="M137 44 H151" marker-end="url(#ar)"/>
+<rect class="n" x="155" y="30" width="97" height="28" rx="6"/>
+<text class="t" x="203" y="44" text-anchor="middle">깨끗한 텍스트</text>
+</svg><p>PDF, 위키, 티켓, 코드를 깨끗한 텍스트로 파싱한다. 제목·표처럼 의미를 담은 구조는 보존한다.</p></div>
+<div class="pat"><h4>임베딩 <span class="en">Embedding</span></h4><svg class="m" viewBox="0 0 186 68" style="max-width:242px" role="img" aria-label="청크를 의미를 담은 벡터로 바꾼다.">
+<rect class="n" x="6" y="30" width="42" height="28" rx="6"/>
+<text class="t" x="27" y="44" text-anchor="middle">청크</text>
+<path class="e" d="M48 44 H62" marker-end="url(#ar)"/>
+<rect class="n-a" x="66" y="30" width="54" height="28" rx="6"/>
+<text class="t" x="93" y="44" text-anchor="middle">임베딩</text>
+<path class="e" d="M120 44 H134" marker-end="url(#ar)"/>
+<rect class="n" x="138" y="30" width="42" height="28" rx="6"/>
+<text class="t" x="159" y="44" text-anchor="middle">벡터</text>
+</svg><p>청크를 의미를 담은 벡터로 바꾼다.</p></div>
+<div class="pat"><h4>인덱싱 <span class="en">Indexing</span></h4><svg class="m" viewBox="0 0 236 68" style="max-width:307px" role="img" aria-label="벡터와 메타데이터를 함께 인덱스에 저장한다.">
+<rect class="n" x="6" y="30" width="42" height="28" rx="6"/>
+<text class="t" x="27" y="44" text-anchor="middle">벡터</text>
+<path class="e" d="M48 44 H62" marker-end="url(#ar)"/>
+<rect class="n-w" x="66" y="30" width="92" height="28" rx="6"/>
+<text class="t" x="112" y="44" text-anchor="middle">+ 메타데이터</text>
+<path class="e" d="M158 44 H172" marker-end="url(#ar)"/>
+<rect class="n" x="176" y="30" width="54" height="28" rx="6"/>
+<text class="t" x="203" y="44" text-anchor="middle">인덱스</text>
+</svg><p>벡터를 저장하고, 필터링용 메타데이터(날짜, 문서 유형, <strong>접근 통제 태그</strong>)를 함께 넣는다. 인덱스 시점의 접근 통제 메타데이터가 있어야 검색이 사용자의 원본 시스템 권한을 지킨다. 자주 놓치는 보안 공백이다(3.2 참고).</p></div>
+<div class="pat"><h4>검색 + 생성 <span class="en">Retrieval + generation</span></h4><svg class="m" viewBox="0 0 277 68" style="max-width:360px" role="img" aria-label="질의를 임베딩해 상위 k개를 찾고 재순위한 뒤 질문과 함께 Claude에 넘긴다.">
+<rect class="n" x="6" y="30" width="42" height="28" rx="6"/>
+<text class="t" x="27" y="44" text-anchor="middle">질의</text>
+<path class="e" d="M48 44 H62" marker-end="url(#ar)"/>
+<rect class="n-a" x="66" y="30" width="54" height="28" rx="6"/>
+<text class="t" x="93" y="44" text-anchor="middle">top-k</text>
+<path class="e" d="M120 44 H134" marker-end="url(#ar)"/>
+<rect class="n-o" x="138" y="30" width="54" height="28" rx="6"/>
+<text class="t" x="165" y="44" text-anchor="middle">재순위</text>
+<path class="e" d="M192 44 H206" marker-end="url(#ar)"/>
+<rect class="n" x="210" y="30" width="61" height="28" rx="6"/>
+<text class="t" x="241" y="44" text-anchor="middle">Claude</text>
+</svg><p>질의 시점에 질의를 임베딩하고 가장 관련 있는 top-k 청크를 찾고(대개 재순위), 사용자 질문과 함께 Claude에 넘긴다.</p></div>
+</div>
+<h3>청킹: 크기는 트레이드오프 <span class="en">Chunking</span></h3>
+<div class="spectra"><div class="spec"><span class="spec-title">청크 크기</span><div class="grad"></div><div class="ends"><span>너무 작음: 정답에 필요한 앞뒤 맥락을 잃는다</span><span>너무 큼: 관련성이 희석되고 검색 뒤 토큰을 낭비한다</span></div></div></div>
+<div class="fig"><div class="fig-cap">도면 7 · 청킹 전략 선택</div>
+<svg class="m" viewBox="0 0 192 110" style="max-width:250px" role="img" aria-label="문서를 고정 크기로 자르면 문장·절 경계를 가로지르고, 구조 기준으로 자르면 자기완결적 단위가 된다.">
+<rect class="n" x="6" y="36" width="42" height="38" rx="6"/>
+<text class="t" x="27" y="55" text-anchor="middle">문서</text>
+<path class="e-w e-dash" d="M48 55 C65 55 65 29 78 29" marker-end="url(#ar-w)"/>
+<rect class="n-dash" x="82" y="10" width="104" height="38" rx="6"/>
+<text class="t" x="134" y="21" text-anchor="middle">고정 크기</text>
+<text class="ts" x="134" y="37" text-anchor="middle">단순, 경계 무시</text>
+<path class="e" d="M48 55 C65 55 65 81 78 81" marker-end="url(#ar)"/>
+<rect class="n-o" x="82" y="62" width="104" height="38" rx="6"/>
+<text class="t" x="134" y="73" text-anchor="middle">의미·구조 기준</text>
+<text class="ts" x="134" y="89" text-anchor="middle">제목·문단 단위</text>
+</svg>
+</div>
+<p class="note">정책 문서, 계약서, 기술 문서에는 대개 제목·문단·논리 절에서 나누는 <strong>의미/구조 청킹</strong>이 더 일관되고 자기완결적인 단위를 검색해 준다.</p>
+</section>
+<section>
+<h2><span class="no">3.6</span>데이터 형태별 검색 전략 <span class="en">Retrieval strategies matched to data shape and query pattern</span></h2>
+<div class="patterns">
+<div class="pat"><h4>비정형 산문, 자연어 질문 <span class="en">Dense vector (semantic) search</span></h4><svg class="m" viewBox="0 0 248 68" style="max-width:323px" role="img" aria-label="정책·위키·지원 문서의 청크를 임베딩해 의미 검색한다.">
+<rect class="n" x="6" y="30" width="85" height="28" rx="6"/>
+<text class="t" x="49" y="44" text-anchor="middle">자연어 질문</text>
+<path class="e" d="M91 44 H105" marker-end="url(#ar)"/>
+<rect class="n-a" x="109" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="146" y="44" text-anchor="middle">벡터 검색</text>
+<path class="e" d="M182 44 H196" marker-end="url(#ar)"/>
+<rect class="n" x="200" y="30" width="42" height="28" rx="6"/>
+<text class="t" x="221" y="44" text-anchor="middle">청크</text>
+</svg><p>정책, 위키, 지원 문서 같은 비정형 산문에 자연어로 묻는 경우.</p><div class="fit"><b>최적 전략:</b> 청킹·임베딩한 텍스트에 대한 <strong>밀집 벡터(의미) 검색</strong></div></div>
+<div class="pat"><h4>정확한 용어가 중요 <span class="en">Keyword / lexical, or hybrid</span></h4><svg class="m" viewBox="0 0 247 90" style="max-width:321px" role="img" aria-label="어휘 검색과 의미 검색을 합친다.">
+<rect class="n" x="6" y="31" width="42" height="28" rx="6"/>
+<text class="t" x="27" y="45" text-anchor="middle">질의</text>
+<path class="e" d="M48 45 C65 45 65 24 78 24" marker-end="url(#ar)"/>
+<rect class="n-w" x="82" y="10" width="47" height="28" rx="6"/>
+<text class="t" x="105" y="24" text-anchor="middle">BM25</text>
+<path class="e" d="M48 45 C65 45 65 66 78 66" marker-end="url(#ar)"/>
+<rect class="n-a" x="82" y="52" width="47" height="28" rx="6"/>
+<text class="t" x="105" y="66" text-anchor="middle">의미</text>
+<path class="e" d="M129 24 C146 24 146 45 159 45" marker-end="url(#ar)"/>
+<path class="e" d="M129 66 C146 66 146 45 159 45" marker-end="url(#ar)"/>
+<rect class="n-o" x="163" y="31" width="78" height="28" rx="6"/>
+<text class="t" x="202" y="45" text-anchor="middle">하이브리드</text>
+</svg><p>제품 SKU, 법률 인용, 오류 코드처럼 정확히 일치해야 하는 경우.</p><div class="fit"><b>최적 전략:</b> <strong>키워드/어휘 검색(BM25 계열)</strong> 또는 어휘 + 의미를 섞은 <strong>하이브리드</strong></div></div>
+<div class="pat"><h4>구조화된 관계형 데이터 <span class="en">Direct DB query / text-to-SQL</span></h4><svg class="m" viewBox="0 0 227 68" style="max-width:295px" role="img" aria-label="주문·거래·재고 질문을 SQL로 바꿔 데이터베이스에 직접 질의한다.">
+<rect class="n" x="6" y="30" width="42" height="28" rx="6"/>
+<text class="t" x="27" y="44" text-anchor="middle">질문</text>
+<path class="e" d="M48 44 H62" marker-end="url(#ar)"/>
+<rect class="n-a" x="66" y="30" width="97" height="28" rx="6"/>
+<text class="t" x="115" y="44" text-anchor="middle">text-to-SQL</text>
+<path class="e" d="M163 44 H177" marker-end="url(#ar)"/>
+<rect class="n-o" x="181" y="30" width="40" height="28" rx="6"/>
+<text class="t" x="201" y="44" text-anchor="middle">DB</text>
+</svg><p>주문, 거래, 재고처럼 구조화된 데이터.</p><div class="fit"><b>최적 전략:</b> 산문으로 덤프한 것에 벡터 검색을 하지 말고 <strong>직접 DB 질의 / text-to-SQL</strong></div></div>
+<div class="pat"><h4>다중 홉 질문 <span class="en">Graph / agentic iterative retrieval</span></h4><svg class="m" viewBox="0 0 246 68" style="max-width:320px" role="img" aria-label="검색하고 추론하고 다시 검색하는 반복.">
+<rect class="n" x="6" y="30" width="42" height="28" rx="6"/>
+<text class="t" x="27" y="44" text-anchor="middle">질문</text>
+<path class="e" d="M48 44 H62" marker-end="url(#ar)"/>
+<rect class="n-a" x="66" y="30" width="42" height="28" rx="6"/>
+<text class="t" x="87" y="44" text-anchor="middle">검색</text>
+<path class="e" d="M108 44 H122" marker-end="url(#ar)"/>
+<rect class="n-w" x="126" y="30" width="42" height="28" rx="6"/>
+<text class="t" x="147" y="44" text-anchor="middle">추론</text>
+<path class="e" d="M168 44 H182" marker-end="url(#ar)"/>
+<rect class="n-a" x="186" y="30" width="54" height="28" rx="6"/>
+<text class="t" x="213" y="44" text-anchor="middle">재검색</text>
+</svg><p>여러 문서를 조합하거나 개체 사이 관계를 따라가야 하는 경우.</p><div class="fit"><b>최적 전략:</b> 한 번의 top-k 대신 <strong>그래프 기반 검색</strong> 또는 <strong>에이전트식 반복 검색</strong>(검색 → 추론 → 재검색)</div></div>
+<div class="pat"><h4>다양한 문서가 있는 대규모 코퍼스 <span class="en">Two-stage retrieval</span></h4><svg class="m" viewBox="0 0 328 68" style="max-width:426px" role="img" aria-label="넓은 재현 검색 뒤에 정밀 재순위로 좁힌다.">
+<rect class="n" x="6" y="30" width="54" height="28" rx="6"/>
+<text class="t" x="33" y="44" text-anchor="middle">코퍼스</text>
+<path class="e" d="M60 44 H74" marker-end="url(#ar)"/>
+<rect class="n-a" x="78" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="115" y="44" text-anchor="middle">재현 패스</text>
+<path class="e" d="M151 44 H165" marker-end="url(#ar)"/>
+<rect class="n-o" x="169" y="30" width="54" height="28" rx="6"/>
+<text class="t" x="196" y="44" text-anchor="middle">재순위</text>
+<path class="e" d="M223 44 H237" marker-end="url(#ar)"/>
+<rect class="n" x="241" y="30" width="80" height="28" rx="6"/>
+<text class="t" x="281" y="44" text-anchor="middle">상위 몇 개</text>
+</svg><p>문서 유형이 다양한 매우 큰 코퍼스.</p><div class="fit"><b>최적 전략:</b> <strong>2단계 검색</strong>: 싸고 넓게 건지는 재현 패스 → 비싸고 정밀하게 좁히는 재순위 패스</div></div>
+</div>
+<div class="callout warm"><span class="eyebrow">반복되는 시험 함정</span>
+<p class="prose"><strong>모든 것에 벡터 검색을 기본으로 쓰는 것.</strong> 데이터가 정말 구조화되어 있거나(거래 DB) 정확 일치가 필요하면(부품 번호), 직접 질의나 어휘 검색이 정확도와 비용 양쪽에서 의미 임베딩 검색을 이긴다.</p>
+</div>
+</section>
+<section>
+<h2><span class="no">3.7</span>연결 프로토콜 선택 <span class="en">Connection protocols: MCP vs. direct API/CLI vs. agent-to-agent</span></h2>
+<div class="patterns">
+<div class="pat"><h4>MCP (Model Context Protocol) <span class="en">Open standard</span></h4><svg class="m" viewBox="0 0 340 210" style="max-width:442px" role="img" aria-label="하나의 MCP 클라이언트가 여러 MCP 서버의 도구·데이터·프롬프트에 연결한다.">
+<rect class="n-a" x="106" y="12" width="128" height="44" rx="8"/>
+<text class="tb" x="170" y="28" text-anchor="middle">MCP 클라이언트</text>
+<text class="ts" x="170" y="45" text-anchor="middle">어느 AI 앱이든</text>
+<path class="e" d="M138 56 C138 90 60 90 60 126" marker-end="url(#ar)"/>
+<rect class="n-a" x="10" y="130" width="100" height="62" rx="8"/>
+<text class="t" x="60" y="148" text-anchor="middle">서버 A</text>
+<text class="ts" x="60" y="166" text-anchor="middle">도구</text>
+<path class="e" d="M170 56 C170 90 170 90 170 126" marker-end="url(#ar)"/>
+<rect class="n-a" x="120" y="130" width="100" height="62" rx="8"/>
+<text class="t" x="170" y="148" text-anchor="middle">서버 B</text>
+<text class="ts" x="170" y="166" text-anchor="middle">데이터</text>
+<path class="e" d="M202 56 C202 90 280 90 280 126" marker-end="url(#ar)"/>
+<rect class="n-a" x="230" y="130" width="100" height="62" rx="8"/>
+<text class="t" x="280" y="148" text-anchor="middle">서버 C</text>
+<text class="ts" x="280" y="166" text-anchor="middle">프롬프트</text>
+<text class="tm" x="178" y="96">표준</text>
+</svg><p>호환되는 어떤 클라이언트든 도구, 데이터, 프롬프트를 노출하는 어떤 MCP 서버든 연결하게 해 주는 개방형 표준(“AI 애플리케이션의 USB-C”). 표준화되고 재사용 가능한 통합 계층이다.</p><div class="fit"><b>적합:</b> 기존·서드파티 도구와 데이터 소스 생태계에 맞춤 연결 코드를 최소로 쓰며 연결할 때. 같은 통합을 하나의 맞춤 앱이 아닌 여러 AI 클라이언트에서 쓸 때.</div></div>
+<div class="pat"><h4>직접 API / CLI 통합 <span class="en">Direct API / CLI</span></h4><svg class="m" viewBox="0 0 230 68" style="max-width:298px" role="img" aria-label="맞춤 코드가 특정 API나 명령줄 도구를 직접 호출한다.">
+<rect class="n" x="6" y="30" width="40" height="28" rx="6"/>
+<text class="t" x="26" y="44" text-anchor="middle">앱</text>
+<path class="e" d="M46 44 H60" marker-end="url(#ar)"/>
+<rect class="n" x="64" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="101" y="44" text-anchor="middle">맞춤 코드</text>
+<path class="e" d="M137 44 H151" marker-end="url(#ar)"/>
+<rect class="n" x="155" y="30" width="68" height="28" rx="6"/>
+<text class="t" x="189" y="44" text-anchor="middle">API·CLI</text>
+</svg><p>특정 API를 호출하거나 특정 명령줄 도구를 실행하는 맞춤 코드.</p><div class="fit"><b>적합:</b> 범위가 좁고 성능에 민감한 단일 통합이라 범용 프로토콜의 오버헤드가 정당화되지 않을 때. MCP 서버가 없고 일회성이라 만들 가치가 없을 때.</div></div>
+<div class="pat"><h4>에이전트 간 프로토콜 <span class="en">Agent-to-agent</span></h4><svg class="m" viewBox="0 0 340 210" style="max-width:442px" role="img" aria-label="서로 다른 조직의 두 에이전트가 정의된 프로토콜로 중앙 오케스트레이터 없이 직접 통신한다.">
+<rect class="bound" x="8" y="20" width="136" height="176" rx="10"/>
+<text class="tm" x="20" y="36">조직 A</text>
+<rect class="bound" x="196" y="20" width="136" height="176" rx="10"/>
+<text class="tm" x="208" y="36">조직 B</text>
+<rect class="n-a" x="26" y="88" width="100" height="44" rx="8"/>
+<text class="t" x="76" y="110" text-anchor="middle">에이전트 A</text>
+<rect class="n-a" x="214" y="88" width="100" height="44" rx="8"/>
+<text class="t" x="264" y="110" text-anchor="middle">에이전트 B</text>
+<path class="e-a" d="M128 104 H210" marker-end="url(#ar-a)"/>
+<path class="e-a" d="M212 118 H130" marker-end="url(#ar-a)"/>
+<text class="ta" x="170" y="150" text-anchor="middle">정의된</text>
+<text class="ta" x="170" y="166" text-anchor="middle">프로토콜</text>
+</svg><p>공유된 중앙 오케스트레이터 없이, 대개 조직이나 신뢰 경계를 넘어 독립된 에이전트끼리 하는 대등한 통신.</p><div class="fit"><b>적합:</b> 조직 간 워크플로, 또는 서로 다른 팀·벤더가 소유한 에이전트가 직접 협상하고 작업을 주고받아야 할 때.</div></div>
+</div>
+<div class="callout "><span class="eyebrow">스타일이 아니라 아키텍처 결정</span>
+<div class="vs"><div class="accent"><span class="tag">MCP</span>표준화 계층을 감수하는 대신 <strong>재사용성과 성장하는 생태계</strong>를 얻는다.</div><div class="ok"><span class="tag">직접 통합</span>좁고 안정적인 사용 사례에서 <strong>단순함과 통제권</strong>을 얻는다.</div><div class="warm"><span class="tag">에이전트 간</span>한 쪽이 전체 오케스트레이션을 가질 수도, 가져서도 안 되는 곳에서 <strong>탈중앙화</strong>를 얻는다.</div></div>
+</div>
+</section>
+<section>
+<h2><span class="no">3.8</span>점진적 탐색 vs. 모놀리식 컨텍스트 <span class="en">Progressive discovery vs. monolithic context strategy</span></h2>
+<p class="prose">에이전트가 많은 도구, 데이터 소스, Skill에 접근할 수 있을 때 이를 노출하는 반대되는 두 전략이 있다.</p>
+<div class="patterns">
+<div class="pat"><h4>모놀리식 컨텍스트 <span class="en">Monolithic context</span></h4><svg class="m" viewBox="0 0 229 78" style="max-width:298px" role="img" aria-label="모든 도구 정의와 문서를 매 요청마다 컨텍스트에 미리 전부 올린다.">
+<rect class="n" x="6" y="30" width="42" height="38" rx="6"/>
+<text class="t" x="27" y="49" text-anchor="middle">요청</text>
+<path class="e" d="M48 49 H62" marker-end="url(#ar)"/>
+<rect class="n-w" x="66" y="30" width="97" height="38" rx="6"/>
+<text class="t" x="115" y="41" text-anchor="middle">전부 로드</text>
+<text class="ts" x="115" y="57" text-anchor="middle">도구·문서·지침</text>
+<path class="e" d="M163 49 H177" marker-end="url(#ar)"/>
+<rect class="n" x="181" y="30" width="42" height="38" rx="6"/>
+<text class="t" x="202" y="49" text-anchor="middle">모델</text>
+</svg><p>모든 도구 정의, 참고 문서, 가능한 지침을 <strong>매 요청마다 미리</strong> 컨텍스트에 올린다. 이해하기 쉽지만 현재 작업과 무관한 기능에 토큰·비용·지연을 쓰고, 비슷한 선택지가 많아 모델이 헷갈릴 가능성도 커진다(3.1).</p><div class="fit"><b>적합:</b> 도구 수가 적고 안정적일 때</div></div>
+<div class="pat"><h4>점진적 탐색 <span class="en">Progressive discovery</span></h4><svg class="m" viewBox="0 0 332 78" style="max-width:432px" role="img" aria-label="작은 디렉터리만 올려 두고 모델이 필요한 항목의 상세만 요청한다.">
+<rect class="n" x="6" y="30" width="42" height="38" rx="6"/>
+<text class="t" x="27" y="49" text-anchor="middle">요청</text>
+<path class="e" d="M48 49 H62" marker-end="url(#ar)"/>
+<rect class="n-a" x="66" y="30" width="97" height="38" rx="6"/>
+<text class="t" x="115" y="41" text-anchor="middle">디렉터리</text>
+<text class="ts" x="115" y="57" text-anchor="middle">작고 상위 수준</text>
+<path class="e" d="M163 49 H177" marker-end="url(#ar)"/>
+<rect class="n-o" x="181" y="30" width="85" height="38" rx="6"/>
+<text class="t" x="224" y="41" text-anchor="middle">필요한 것만</text>
+<text class="ts" x="224" y="57" text-anchor="middle">상세 요청</text>
+<path class="e" d="M266 49 H280" marker-end="url(#ar)"/>
+<rect class="n" x="284" y="30" width="42" height="38" rx="6"/>
+<text class="t" x="305" y="49" text-anchor="middle">모델</text>
+</svg><p>기능의 작고 상위 수준인 <strong>디렉터리</strong>(예: 도구 검색 메커니즘, Skill 색인)만 노출하고, 모델이 필요하다고 판단한 도구·Skill·문서의 상세만 필요한 때에 요청하게 한다. 수십~수백 개로 늘어도 상주 컨텍스트가 작고 집중된다.</p><div class="fit"><b>적합:</b> 도구·Skill 카탈로그가 크거나 늘어날 때</div></div>
+</div>
+<div class="fig"><div class="fig-cap">도면 8 · 카탈로그 규모에 따른 선택</div>
+<svg class="m" viewBox="0 0 257 110" style="max-width:335px" role="img" aria-label="도구 카탈로그의 규모에 따라 작고 안정적이면 모놀리식, 크거나 늘어나면 점진적 탐색을 고른다.">
+<path class="n-o" d="M58 32 L109 55 L58 78 L6 55 Z"/>
+<text class="t" x="58" y="55" text-anchor="middle">카탈로그 규모</text>
+<path class="e" d="M109 55 C126 55 126 29 139 29" marker-end="url(#ar)"/>
+<rect class="n" x="143" y="10" width="108" height="38" rx="6"/>
+<text class="t" x="197" y="21" text-anchor="middle">작고 안정적</text>
+<text class="ts" x="197" y="37" text-anchor="middle">모놀리식도 충분</text>
+<path class="e" d="M109 55 C126 55 126 81 139 81" marker-end="url(#ar)"/>
+<rect class="n-o" x="143" y="62" width="108" height="38" rx="6"/>
+<text class="t" x="197" y="73" text-anchor="middle">크거나 증가</text>
+<text class="ts" x="197" y="89" text-anchor="middle">점진적 탐색 필수</text>
+</svg>
+</div>
+<div class="callout "><span class="eyebrow">시험 휴리스틱</span>
+<p class="prose"><strong>도구 수가 적고 안정적 → 모놀리식도 충분하고 더 단순.</strong><br><strong>카탈로그가 크거나 늘어남 → 점진적 탐색이 필수.</strong> 컨텍스트 비대와 도구 선택 오류를 모두 피하기 위해서다.</p>
+</div>
+</section>
+<section>
+<h2>핵심 정리 <span class="en">Key takeaways: Domain 3</span></h2>
+<ul class="takeaways"><li><span>도구·에이전트 범위의 기본 렌즈는 최소 권한이다. 불필요한 기능은 모니터링하지 말고 제거한다.</span></li><li><span>인증(누구인가?)과 인가(이 구체적인 일을 해도 되나?)를 따로 확인하고, 민감한 행동에 가장 가까운 곳에서 확인한다.</span></li><li><span>정확도·지연·비용 트레이드오프는 추상적으로가 아니라 명시된 SLA나 비즈니스 제약에 맞춰 정당화한다.</span></li><li><span>대규모 관찰 가능성은 구조화 로그, 층화 표본, 지속적 자동 평가, 드리프트 감지다. 대화록 몇 개를 훑는 것이 아니다.</span></li><li><span>청킹과 검색 전략은 데이터의 실제 형태와 질의 패턴에 맞춘다. 구조화 데이터와 정확 일치 요구는 비용과 정확도에서 벡터 검색을 이기는 경우가 많다.</span></li><li><span>MCP, 직접 API/CLI, 에이전트 간 중에서 재사용성, 생태계, 신뢰 경계 요구에 따라 의도적으로 고른다.</span></li><li><span>도구·Skill 카탈로그가 커지면 점진적 탐색을 쓴다. 모놀리식 컨텍스트는 카탈로그가 작고 안정적일 때만 효율적이다.</span></li></ul>
+</section>
+
+<p class="source">원문: <a href="https://amitj.me/claude/course/ccarp/2/#page-d3">원문: CCARP Part II · Domain 3 Integration</a> 페이지 내용만 한국어로 정리하고 도식화했습니다.</p>
+
+</div>

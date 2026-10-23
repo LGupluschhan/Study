@@ -1,0 +1,429 @@
+<title>거버넌스·안전·리스크</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: 설계 도면(blueprint) 노트 — 좁은 본문 열 + 모눈 도면 패널. 섹션 번호는 원문 번호 그대로.
+   build_page.py가 이 파일을 <style>에 그대로 넣는다. 색은 모두 토큰으로만 쓴다(라이트/다크 자동). */
+:root {
+  --bg: #f5f7fa;
+  --panel: #ffffff;
+  --fg: #18212e;
+  --muted: #5a6779;
+  --line: #c9d2de;
+  --grid: #e6ebf2;
+  --accent: #2456c9;
+  --accent-soft: #e4ecfb;
+  --warm: #b8621b;
+  --warm-soft: #fbeedf;
+  --ok: #2f7d4f;
+  --ok-soft: #e2f2e8;
+  --node: #ffffff;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f141c; --panel: #161d28; --fg: #e3e8ef; --muted: #96a3b5; --line: #334155; --grid: #1e2734;
+    --accent: #7ea6ff; --accent-soft: #1c2a47; --warm: #f0a35e; --warm-soft: #3a2816;
+    --ok: #6cc892; --ok-soft: #173526; --node: #1b2431; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f141c; --panel: #161d28; --fg: #e3e8ef; --muted: #96a3b5; --line: #334155; --grid: #1e2734;
+  --accent: #7ea6ff; --accent-soft: #1c2a47; --warm: #f0a35e; --warm-soft: #3a2816;
+  --ok: #6cc892; --ok-soft: #173526; --node: #1b2431; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.75;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 80px;
+  word-break: keep-all; overflow-wrap: anywhere;
+}
+.wrap { max-width: 920px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+.prose { max-width: 680px; }
+h1, h2, h3 { text-wrap: balance; line-height: 1.35; margin: 0; }
+h1 { font-size: clamp(28px, 5vw, 40px); font-weight: 700; }
+h2 { font-size: 24px; font-weight: 700; display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+h2 .no { font-family: var(--font-mono); font-size: 15px; color: var(--accent); font-weight: 600; }
+h3 { font-size: 18px; font-weight: 700; }
+p { margin: 0; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.en { font-family: var(--font-mono); font-size: .78em; color: var(--muted); font-weight: 400; }
+section { display: flex; flex-direction: column; gap: 18px; }
+.lead { font-size: 18px; color: var(--muted); }
+
+/* header */
+header { display: flex; flex-direction: column; gap: 14px; }
+.weight { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.weight-bar { width: 220px; max-width: 100%; height: 10px; border-radius: 5px; background: var(--grid); overflow: hidden; }
+.weight-bar span { display: block; height: 100%; background: var(--accent); }
+.weight small { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+
+/* blueprint panel */
+.fig {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+  padding: 20px; display: flex; flex-direction: column; gap: 14px;
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 24px 24px; background-position: -1px -1px;
+}
+.fig-cap { font-family: var(--font-mono); font-size: 12px; color: var(--muted); letter-spacing: .04em; }
+.scroll { overflow-x: auto; }
+svg.d { display: block; width: 100%; height: auto; min-width: 560px; }
+svg.m { display: block; width: 100%; height: auto; }
+
+/* svg styling */
+.n { fill: var(--node); stroke: var(--line); stroke-width: 1.5; }
+.n-a { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+.n-w { fill: var(--warm-soft); stroke: var(--warm); stroke-width: 1.5; }
+.n-o { fill: var(--ok-soft); stroke: var(--ok); stroke-width: 1.5; }
+.n-dash { fill: var(--node); stroke: var(--muted); stroke-width: 1.3; stroke-dasharray: 4 3; }
+.bound { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 6 4; }
+.e { fill: none; stroke: var(--muted); stroke-width: 1.6; }
+.e-a { fill: none; stroke: var(--accent); stroke-width: 1.8; }
+.e-w { fill: none; stroke: var(--warm); stroke-width: 1.8; }
+.e-dash { stroke-dasharray: 5 4; }
+.ah { fill: var(--muted); } .ah-a { fill: var(--accent); } .ah-w { fill: var(--warm); }
+.t { fill: var(--fg); font-family: var(--font-body); font-size: 12px; }
+.tb { fill: var(--fg); font-family: var(--font-body); font-size: 14px; font-weight: 700; }
+.ts { fill: var(--muted); font-family: var(--font-body); font-size: 11px; }
+.tm { fill: var(--muted); font-family: var(--font-mono); font-size: 10px; letter-spacing: .04em; }
+.ta { fill: var(--accent); font-family: var(--font-body); font-size: 12px; font-weight: 700; }
+.tw { fill: var(--warm); font-family: var(--font-body); font-size: 12px; font-weight: 700; }
+svg text { dominant-baseline: middle; }
+
+/* lists */
+ul.plain { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 6px; }
+.tasks { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.task { border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; background: var(--panel); font-size: 15px; display: flex; gap: 10px; align-items: flex-start; }
+.task b { font-family: var(--font-mono); color: var(--accent); font-size: 13px; padding-top: 2px; }
+
+/* 1.1 work backward */
+.backward { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; }
+.step { flex: 1 1 150px; min-width: 0; border: 1px solid var(--line); background: var(--node); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 1.55; }
+.step .k { font-family: var(--font-mono); font-size: 11px; color: var(--muted); letter-spacing: .05em; }
+.step.goal { background: var(--ok-soft); border-color: var(--ok); }
+.step.pick { background: var(--accent-soft); border-color: var(--accent); }
+.arrow-row { font-family: var(--font-mono); font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.spectra { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.spec { background: var(--node); border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.spec-title { font-weight: 700; font-size: 14px; }
+.grad { height: 10px; border-radius: 5px; background: linear-gradient(90deg, var(--ok), var(--warm)); }
+.ends { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--muted); }
+.ends span:last-child { text-align: right; }
+.quote { border-left: 3px solid var(--accent); padding: 4px 0 4px 16px; font-size: 17px; }
+.quote small { display: block; color: var(--muted); font-size: 13px; }
+
+/* patterns grid */
+.patterns { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.pat { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.pat h4 { margin: 0; font-size: 16px; display: flex; flex-direction: column; gap: 2px; }
+.pat p { font-size: 14px; line-height: 1.6; }
+.pat .fit { font-size: 13px; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 8px; }
+.pat .fit b { color: var(--fg); font-weight: 500; }
+.pat svg { background: var(--bg); border-radius: 6px; }
+
+.callout { border: 1px solid var(--accent); background: var(--accent-soft); border-radius: 10px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; }
+.callout .eyebrow { color: var(--accent); }
+.callout.warm { border-color: var(--warm); background: var(--warm-soft); }
+.callout.warm .eyebrow { color: var(--warm); }
+
+/* heuristic */
+.vs { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.vs > div { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; min-width: 0; }
+.vs .tag { font-family: var(--font-mono); font-size: 12px; font-weight: 600; }
+.vs .ok .tag { color: var(--ok); } .vs .warm .tag { color: var(--warm); } .vs .accent .tag { color: var(--accent); }
+
+/* cost chips */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font-size: 13px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--warm); color: var(--warm); background: var(--warm-soft); }
+
+/* pillars */
+.pillars { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.pillar { background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--accent); border-radius: 6px; padding: 14px; display: flex; flex-direction: column; gap: 8px; min-width: 0; font-size: 14px; line-height: 1.55; }
+.pillar h4 { margin: 0; font-size: 16px; display: flex; flex-direction: column; }
+.pillar .ev { color: var(--muted); font-size: 13px; border-top: 1px dashed var(--line); padding-top: 8px; }
+.split { display: flex; height: 44px; border-radius: 8px; overflow: hidden; font-size: 13px; font-weight: 500; }
+.split div { display: flex; align-items: center; padding: 0 12px; min-width: 0; white-space: nowrap; overflow: hidden; }
+.split .fast { flex: 9; background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); border-radius: 8px 0 0 8px; }
+.split .slow { flex: 1.6; background: var(--warm-soft); color: var(--warm); border: 1px solid var(--warm); border-left: 0; border-radius: 0 8px 8px 0; justify-content: center; }
+.legend { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+
+/* takeaways */
+.takeaways { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.takeaways li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+.takeaways li::before { content: "✓"; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--ok-soft); color: var(--ok); font-size: 13px; font-weight: 700; margin-top: 3px; }
+
+.source { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; }
+.source a { color: var(--accent); }
+.note { font-size: 14px; color: var(--muted); }
+.c-accent { color: var(--accent); } .c-warm { color: var(--warm); } .c-ok { color: var(--ok); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0 0L10 5L0 10z"/></marker>
+    <marker id="ar-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah-a" d="M0 0L10 5L0 10z"/></marker>
+    <marker id="ar-w" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah-w" d="M0 0L10 5L0 10z"/></marker>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">CCA-F 코스 · Part 2 · Domain 5</div>
+  <h1>거버넌스, 안전, 리스크 관리 <span class="en">Governance, Safety & Risk Management</span></h1>
+  <p class="lead prose">Claude 시스템을 출시 <strong>전, 중, 후</strong> 모두에서 안전하고, 규정을 지키며, 설명할 수 있게 유지하는 능력입니다.</p>
+  <div class="weight"><div class="weight-bar" role="img" aria-label="시험 비중 14%"><span style="width:14%"></span></div><small>시험 비중 14%</small></div>
+</header>
+
+<section>
+<h2>공식 출제 항목 <span class="en">Official task statements</span></h2>
+<div class="tasks"><div class="task"><b>5.1</b><span>가드레일과 안전 통제 구현</span></div><div class="task"><b>5.2</b><span>LLM 시스템의 리스크, 한계, 실패 모드 식별</span></div><div class="task"><b>5.3</b><span>휴먼 인 더 루프(HITL) 검증 전략 적용</span></div><div class="task"><b>5.4</b><span>규제 준수 (예: GDPR, HIPAA, FedRAMP)</span></div><div class="task"><b>5.5</b><span>윤리적 AI 고려 (편향, 공정성, 투명성)</span></div></div>
+</section>
+<section>
+<h2><span class="no">5.1</span>가드레일과 안전 통제 <span class="en">Guardrails and safety controls</span></h2>
+<p class="prose">가드레일은 <strong>여러 층</strong>에 둡니다. 성숙한 설계는 한 가지에 의존하지 않고 여러 층을 동시에 씁니다.</p>
+<div class="fig"><div class="fig-cap">도면 1 · 다섯 겹의 가드레일</div>
+<svg class="m" viewBox="0 0 429 78" style="max-width:557px" role="img" aria-label="요청이 입력, 시스템 프롬프트, 도구 범위, 출력, 행동의 다섯 층을 차례로 지난다.">
+<rect class="n-a" x="6" y="30" width="91" height="38" rx="6"/>
+<text class="t" x="51" y="41" text-anchor="middle">입력</text>
+<text class="ts" x="51" y="57" text-anchor="middle">인젝션 · PII</text>
+<path class="e" d="M97 49 H111" marker-end="url(#ar)"/>
+<rect class="n-a" x="115" y="30" width="69" height="38" rx="6"/>
+<text class="t" x="149" y="41" text-anchor="middle">프롬프트</text>
+<text class="ts" x="149" y="57" text-anchor="middle">행동 경계</text>
+<path class="e" d="M183 49 H197" marker-end="url(#ar)"/>
+<rect class="n-a" x="201" y="30" width="73" height="38" rx="6"/>
+<text class="t" x="238" y="41" text-anchor="middle">도구 범위</text>
+<text class="ts" x="238" y="57" text-anchor="middle">최소 권한</text>
+<path class="e" d="M274 49 H288" marker-end="url(#ar)"/>
+<rect class="n-a" x="292" y="30" width="64" height="38" rx="6"/>
+<text class="t" x="324" y="41" text-anchor="middle">출력</text>
+<text class="ts" x="324" y="57" text-anchor="middle">2차 검토</text>
+<path class="e" d="M357 49 H371" marker-end="url(#ar)"/>
+<path class="n-o" d="M399 26 L423 49 L399 72 L375 49 Z"/>
+<text class="t" x="399" y="49" text-anchor="middle">행동</text>
+</svg>
+</div>
+<div class="pillars"><div class="pillar"><h4>입력 <span class="en">Input</span></h4><span>들어오는 요청을 분류·필터링합니다. 프롬프트 인젝션, PII, 범위 밖 주제를 <strong>메인 모델 호출 전에</strong> 걸러냅니다.</span><span class="ev">메인 호출 이전</span></div><div class="pillar"><h4>시스템 프롬프트 <span class="en">System prompt</span></h4><span>명시적인 행동 경계와 에스컬레이션 지침 (Domain 2).</span><span class="ev">Domain 2</span></div><div class="pillar"><h4>도구·행동 범위 <span class="en">Tool/action scope</span></h4><span><strong>최소 권한</strong> 도구 접근. 위험한 기능을 모니터링만 하지 않고 아예 제거합니다 (Domain 3).</span><span class="ev">Domain 3</span></div><div class="pillar"><h4>출력 <span class="en">Output</span></h4><span>별도의 분류기 호출이나 결정론적 코드가 생성된 응답을 한 번 더 검사합니다. 사용자에게 가거나 후속 행동을 일으키기 전에 정책 위반을 걸러냅니다.</span><span class="ev">사용자 전달 이전</span></div><div class="pillar"><h4>행동 <span class="en">Action</span></h4><span>고영향 행동(임계값 이상 환불, 계정 삭제)은 실행 전에 <strong>사람 승인 또는 엄격한 업무 규칙 점검</strong>을 요구합니다.</span><span class="ev">실행 이전</span></div></div>
+<div class="callout "><span class="eyebrow">시험의 반복 원칙</span>
+<p class="prose"><strong>제거가 탐지보다 낫고, 탐지가 아무것도 안 하는 것보다 낫다.</strong> 기능이 존재하지 못하게 막는 것이, 오남용을 사후에 기록하거나 표시하는 것보다 강합니다.</p>
+</div>
+</section>
+<section>
+<h2><span class="no">5.2</span>리스크와 실패 모드 <span class="en">Risks, limitations, and failure modes of LLM systems</span></h2>
+<p class="prose">핵심 실패 모드는 <strong>이름으로 말할 수 있어야</strong> 합니다.</p>
+<div class="fig"><div class="fig-cap">도면 2 · 여섯 가지 실패 모드</div>
+<svg class="m" viewBox="0 0 238 258" style="max-width:309px" role="img" aria-label="LLM 시스템의 리스크가 환각, 프롬프트 인젝션, 과도한 권한, 데이터 유출, 드리프트, 편향 증폭의 여섯 가지로 갈라진다.">
+<rect class="n-w" x="6" y="115" width="83" height="28" rx="6"/>
+<text class="t" x="47" y="129" text-anchor="middle">LLM 리스크</text>
+<path class="e" d="M89 129 C106 129 106 24 119 24" marker-end="url(#ar)"/>
+<rect class="n-a" x="123" y="10" width="109" height="28" rx="6"/>
+<text class="t" x="177" y="24" text-anchor="middle">환각</text>
+<path class="e" d="M89 129 C106 129 106 66 119 66" marker-end="url(#ar)"/>
+<rect class="n-a" x="123" y="52" width="109" height="28" rx="6"/>
+<text class="t" x="177" y="66" text-anchor="middle">프롬프트 인젝션</text>
+<path class="e" d="M89 129 C106 129 106 108 119 108" marker-end="url(#ar)"/>
+<rect class="n-a" x="123" y="94" width="109" height="28" rx="6"/>
+<text class="t" x="177" y="108" text-anchor="middle">과도한 권한</text>
+<path class="e" d="M89 129 C106 129 106 150 119 150" marker-end="url(#ar)"/>
+<rect class="n-a" x="123" y="136" width="109" height="28" rx="6"/>
+<text class="t" x="177" y="150" text-anchor="middle">데이터 유출</text>
+<path class="e" d="M89 129 C106 129 106 192 119 192" marker-end="url(#ar)"/>
+<rect class="n-a" x="123" y="178" width="109" height="28" rx="6"/>
+<text class="t" x="177" y="192" text-anchor="middle">드리프트</text>
+<path class="e" d="M89 129 C106 129 106 234 119 234" marker-end="url(#ar)"/>
+<rect class="n-a" x="123" y="220" width="109" height="28" rx="6"/>
+<text class="t" x="177" y="234" text-anchor="middle">편향 증폭</text>
+</svg>
+</div>
+<div class="patterns">
+<div class="pat"><h4>환각 <span class="en">Hallucination</span></h4><svg class="m" viewBox="0 0 256 68" style="max-width:332px" role="img" aria-label="근거 컨텍스트 밖의 질문이 자신 있는 거짓 주장으로 이어진다.">
+<rect class="n" x="6" y="30" width="61" height="28" rx="6"/>
+<text class="t" x="37" y="44" text-anchor="middle">근거 밖</text>
+<path class="e" d="M67 44 H81" marker-end="url(#ar)"/>
+<rect class="n-a" x="85" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="122" y="44" text-anchor="middle">자신 있게</text>
+<path class="e" d="M158 44 H172" marker-end="url(#ar)"/>
+<rect class="n-w" x="176" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="213" y="44" text-anchor="middle">거짓 주장</text>
+</svg><p>특히 근거 컨텍스트나 신뢰할 수 있는 지식 밖에서, 자신 있게 거짓이거나 검증할 수 없는 주장을 만듭니다.</p></div>
+<div class="pat"><h4>프롬프트 인젝션 <span class="en">Prompt injection</span></h4><svg class="m" viewBox="0 0 292 68" style="max-width:379px" role="img" aria-label="외부 콘텐츠에 숨은 악성 지시가 시스템 동작을 덮어쓴다.">
+<rect class="n" x="6" y="30" width="85" height="28" rx="6"/>
+<text class="t" x="49" y="44" text-anchor="middle">외부 콘텐츠</text>
+<path class="e" d="M91 44 H105" marker-end="url(#ar)"/>
+<rect class="n-w" x="109" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="146" y="44" text-anchor="middle">숨은 지시</text>
+<path class="e" d="M182 44 H196" marker-end="url(#ar)"/>
+<rect class="n-w" x="200" y="30" width="85" height="28" rx="6"/>
+<text class="t" x="243" y="44" text-anchor="middle">동작 덮어씀</text>
+</svg><p>검색된 문서, 도구 출력, 사용자 입력에 숨은 악성 지시가 시스템의 의도를 덮어쓰려 합니다. 에이전트가 웹 페이지·이메일·문서 같은 <strong>신뢰할 수 없는 외부 콘텐츠</strong>를 컨텍스트로 처리할 때 특히 위험합니다.</p></div>
+<div class="pat"><h4>과도한 권한 <span class="en">Excessive agency</span></h4><svg class="m" viewBox="0 0 316 68" style="max-width:410px" role="img" aria-label="체크포인트 없는 다단계 루프에서 에이전트가 작업이 요구한 범위를 넘는다.">
+<rect class="n" x="6" y="30" width="85" height="28" rx="6"/>
+<text class="t" x="49" y="44" text-anchor="middle">다단계 루프</text>
+<path class="e" d="M91 44 H105" marker-end="url(#ar)"/>
+<rect class="n-dash" x="109" y="30" width="109" height="28" rx="6"/>
+<text class="t" x="164" y="44" text-anchor="middle">체크포인트 부족</text>
+<path class="e" d="M218 44 H232" marker-end="url(#ar)"/>
+<rect class="n-w" x="236" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="273" y="44" text-anchor="middle">범위 초과</text>
+</svg><p>에이전트가 작업이 실제로 요구한 것보다 많은 행동을 합니다. 체크포인트가 부족한 다단계 자율 루프에서 두드러집니다.</p></div>
+<div class="pat"><h4>데이터 유출 <span class="en">Data leakage</span></h4><svg class="m" viewBox="0 0 344 68" style="max-width:448px" role="img" aria-label="한 사용자의 민감 정보가 다른 사용자의 세션에 나타난다.">
+<rect class="n" x="6" y="30" width="100" height="28" rx="6"/>
+<text class="t" x="56" y="44" text-anchor="middle">사용자 A 정보</text>
+<path class="e" d="M106 44 H120" marker-end="url(#ar)"/>
+<rect class="n-w" x="124" y="30" width="97" height="28" rx="6"/>
+<text class="t" x="172" y="44" text-anchor="middle">부적절한 노출</text>
+<path class="e" d="M221 44 H235" marker-end="url(#ar)"/>
+<rect class="n" x="239" y="30" width="100" height="28" rx="6"/>
+<text class="t" x="289" y="44" text-anchor="middle">사용자 B 세션</text>
+</svg><p>한 사용자의 컨텍스트, 검색된 문서, 학습 데이터의 민감 정보가 다른 사용자의 세션이나 출력에 부적절하게 나타납니다.</p></div>
+<div class="pat"><h4>모델·지식 드리프트 <span class="en">Model/knowledge drift</span></h4><svg class="m" viewBox="0 0 292 68" style="max-width:379px" role="img" aria-label="조용한 상류 변경이 동작이나 정확도를 바꾼다.">
+<rect class="n" x="6" y="30" width="85" height="28" rx="6"/>
+<text class="t" x="49" y="44" text-anchor="middle">조용한 변경</text>
+<path class="e" d="M91 44 H105" marker-end="url(#ar)"/>
+<rect class="n-dash" x="109" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="146" y="44" text-anchor="middle">동작 이동</text>
+<path class="e" d="M182 44 H196" marker-end="url(#ar)"/>
+<rect class="n-w" x="200" y="30" width="85" height="28" rx="6"/>
+<text class="t" x="243" y="44" text-anchor="middle">정확도 변화</text>
+</svg><p>모델 버전 업데이트, 데이터 갱신, 다른 곳에서 한 프롬프트 수정 같은 <strong>조용한 상류 변경</strong> 뒤에 동작이나 정확도가 달라집니다.</p></div>
+<div class="pat"><h4>편향 증폭 <span class="en">Bias amplification</span></h4><svg class="m" viewBox="0 0 373 68" style="max-width:485px" role="img" aria-label="학습 데이터, 검색 코퍼스, 평가셋의 문제가 특정 집단의 불리한 결과로 이어진다.">
+<rect class="n" x="6" y="30" width="112" height="28" rx="6"/>
+<text class="t" x="62" y="44" text-anchor="middle">데이터 · 코퍼스</text>
+<path class="e" d="M118 44 H132" marker-end="url(#ar)"/>
+<rect class="n-dash" x="136" y="30" width="116" height="28" rx="6"/>
+<text class="t" x="194" y="44" text-anchor="middle">평가셋이 못 잡음</text>
+<path class="e" d="M252 44 H266" marker-end="url(#ar)"/>
+<rect class="n-w" x="270" y="30" width="97" height="28" rx="6"/>
+<text class="t" x="319" y="44" text-anchor="middle">집단별 불공정</text>
+</svg><p>시스템이 특정 집단에 체계적으로 더 나쁘거나 불공정한 결과를 냅니다. 학습 데이터 패턴, 편향된 검색 코퍼스, 이를 못 잡은 <strong>대표성 없는 평가셋</strong> 때문일 수 있습니다.</p></div>
+</div>
+</section>
+<section>
+<h2><span class="no">5.3</span>휴먼 인 더 루프 검증 <span class="en">Human-in-the-loop (HITL) validation strategies</span></h2>
+<p class="prose">모든 행동에 사람이 필요하지는 않습니다. 전부에 요구하면 자동화의 의미가 사라집니다. <strong>HITL을 리스크에 맞춰</strong> 조정합니다.</p>
+<div class="fig"><div class="fig-cap">도면 3 · 리스크 등급이 오를수록 사람의 개입이 강해진다</div>
+<div class="scroll"><svg class="d" viewBox="0 0 700 240" role="img" aria-label="낮은 위험은 사후 표본 검토, 중간 위험은 발송 전 검토 또는 표본 검토, 높은 위험은 매번 필수 승인이다.">
+<path class="e-w" d="M30 220 V24" marker-end="url(#ar-w)"/>
+<text class="tw" x="40" y="22">리스크 ↑</text>
+<rect class="n-o" x="60" y="150" width="200" height="74" rx="6"/>
+<text class="tb" x="76" y="172">낮음</text>
+<text class="ts" x="76" y="194">게이트 없음</text>
+<text class="ts" x="76" y="212">사후 표본 검토</text>
+<rect class="n-a" x="270" y="100" width="200" height="124" rx="6"/>
+<text class="tb" x="286" y="122">중간</text>
+<text class="ts" x="286" y="144">발송 전 검토</text>
+<text class="ts" x="286" y="162">또는 표본 상시 검토</text>
+<path class="e e-dash" d="M160 140 C160 110 200 96 262 96" marker-end="url(#ar)"/>
+<text class="ts" x="150" y="96" text-anchor="end">사람 개입 강화</text>
+<rect class="n-w" x="480" y="50" width="200" height="174" rx="6"/>
+<text class="tb" x="496" y="72">높음</text>
+<text class="ts" x="496" y="94">실행 전 필수 승인</text>
+<text class="ts" x="496" y="112">매번, 예외 없음</text>
+<path class="e e-dash" d="M370 90 C370 60 410 46 472 46" marker-end="url(#ar)"/>
+<text class="ts" x="360" y="46" text-anchor="end">사람 개입 강화</text>
+</svg></div>
+</div>
+<div class="pillars"><div class="pillar"><h4>낮음 <span class="en">Low</span></h4><span>초안 생성, 내부 검색 요약. 사람 게이트는 필요 없고 표본으로 사후 검토합니다.</span><span class="ev">사후 표본 검토</span></div><div class="pillar"><h4>중간 <span class="en">Medium</span></h4><span>고객 응대 답변, 티켓 분류. 보내기 전에 사람이 검토하거나, 통계적 표본을 계속 검토합니다.</span><span class="ev">발송 전 또는 표본 상시</span></div><div class="pillar"><h4>높음 <span class="en">High</span></h4><span>환불, 계정 변경, 의료·법률 안내, 금융 거래. 행동이 실행되기 전에 사람의 승인이 <strong>매번 예외 없이</strong> 필요합니다.</span><span class="ev">필수 승인</span></div></div>
+<div class="callout warm"><span class="eyebrow">체크포인트 위치</span>
+<p class="prose">HITL 체크포인트는 세션 시작이 아니라 <strong>되돌릴 수 없거나 영향이 큰 행동 지점</strong>에 둡니다. 작업을 시작해도 좋다고 승인받은 장시간 에이전트가, 이후 스스로 결정하는 모든 행동까지 미리 승인받은 것은 아닙니다.</p>
+</div>
+</section>
+<section>
+<h2><span class="no">5.4</span>규제 준수 <span class="en">Regulatory compliance</span></h2>
+<p class="prose">변호사가 될 필요는 없습니다. 시나리오가 <strong>어느 규제를 촉발하는지</strong>, 그에 따른 아키텍처상 함의가 무엇인지 알아보면 됩니다.</p>
+<div class="fig"><div class="fig-cap">도면 4 · 데이터·분야에서 규제와 통제로</div>
+<svg class="m" viewBox="0 0 334 162" style="max-width:434px" role="img" aria-label="시나리오의 데이터 유형에 따라 건강 데이터는 HIPAA, EU 개인 데이터는 GDPR, 미국 연방 기관은 FedRAMP로 갈라진다.">
+<rect class="n-w" x="6" y="62" width="66" height="38" rx="6"/>
+<text class="t" x="39" y="81" text-anchor="middle">시나리오</text>
+<path class="e" d="M72 81 H86" marker-end="url(#ar)"/>
+<path class="n-o" d="M151 58 L212 81 L151 104 L90 81 Z"/>
+<text class="t" x="151" y="81" text-anchor="middle">데이터·분야 식별</text>
+<path class="e" d="M212 81 C229 81 229 29 242 29" marker-end="url(#ar)"/>
+<rect class="n-a" x="246" y="10" width="82" height="38" rx="6"/>
+<text class="t" x="287" y="21" text-anchor="middle">HIPAA</text>
+<text class="ts" x="287" y="37" text-anchor="middle">건강 데이터</text>
+<path class="e" d="M212 81 C229 81 229 81 242 81" marker-end="url(#ar)"/>
+<rect class="n-a" x="246" y="62" width="82" height="38" rx="6"/>
+<text class="t" x="287" y="73" text-anchor="middle">GDPR</text>
+<text class="ts" x="287" y="89" text-anchor="middle">EU 개인정보</text>
+<path class="e" d="M212 81 C229 81 229 133 242 133" marker-end="url(#ar)"/>
+<rect class="n-a" x="246" y="114" width="82" height="38" rx="6"/>
+<text class="t" x="287" y="125" text-anchor="middle">FedRAMP</text>
+<text class="ts" x="287" y="141" text-anchor="middle">미국 연방</text>
+</svg>
+</div>
+<div class="patterns">
+<div class="pat"><h4>GDPR <span class="en">EU personal data</span></h4><svg class="m" viewBox="0 0 256 68" style="max-width:332px" role="img" aria-label="EU 개인정보는 최소화, 삭제·접근권, 적법 근거 같은 통제로 이어진다.">
+<rect class="n" x="6" y="30" width="88" height="28" rx="6"/>
+<text class="t" x="50" y="44" text-anchor="middle">EU 개인정보</text>
+<path class="e" d="M94 44 H108" marker-end="url(#ar)"/>
+<rect class="n-a" x="112" y="30" width="47" height="28" rx="6"/>
+<text class="t" x="135" y="44" text-anchor="middle">GDPR</text>
+<path class="e" d="M158 44 H172" marker-end="url(#ar)"/>
+<rect class="n-o" x="176" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="213" y="44" text-anchor="middle">최소 수집</text>
+</svg><p>데이터 최소화, 삭제·접근 권리, 명확한 적법 처리 근거. 국경 간 이전과 보존 규칙, 그리고 EU 개인정보를 다루는 AI 시스템이 <strong>무엇을 기록하고, 캐시하고, 보존하는지</strong>에 유의합니다.</p></div>
+<div class="pat"><h4>HIPAA <span class="en">US protected health information</span></h4><svg class="m" viewBox="0 0 227 68" style="max-width:295px" role="img" aria-label="미국 보호 건강 정보는 BAA와 접근 통제, 감사 로그로 이어진다.">
+<rect class="n" x="6" y="30" width="40" height="28" rx="6"/>
+<text class="t" x="26" y="44" text-anchor="middle">PHI</text>
+<path class="e" d="M46 44 H60" marker-end="url(#ar)"/>
+<rect class="n-a" x="64" y="30" width="54" height="28" rx="6"/>
+<text class="t" x="91" y="44" text-anchor="middle">HIPAA</text>
+<path class="e" d="M118 44 H132" marker-end="url(#ar)"/>
+<rect class="n-o" x="136" y="30" width="85" height="28" rx="6"/>
+<text class="t" x="179" y="44" text-anchor="middle">BAA · 감사</text>
+</svg><p>PHI를 다루는 모든 벤더와 <strong>업무 제휴 계약(BAA)</strong>, 엄격한 접근 통제와 감사 로깅, 작업에 완전한 식별이 필요 없으면 비식별화.</p></div>
+<div class="pat"><h4>FedRAMP <span class="en">US federal government cloud</span></h4><svg class="m" viewBox="0 0 275 68" style="max-width:357px" role="img" aria-label="미국 연방 클라우드 시스템은 이미 인가된 환경이 필요하다.">
+<rect class="n" x="6" y="30" width="73" height="28" rx="6"/>
+<text class="t" x="43" y="44" text-anchor="middle">연방 기관</text>
+<path class="e" d="M79 44 H93" marker-end="url(#ar)"/>
+<rect class="n-a" x="97" y="30" width="68" height="28" rx="6"/>
+<text class="t" x="131" y="44" text-anchor="middle">FedRAMP</text>
+<path class="e" d="M166 44 H180" marker-end="url(#ar)"/>
+<rect class="n-o" x="184" y="30" width="85" height="28" rx="6"/>
+<text class="t" x="226" y="44" text-anchor="middle">인가된 환경</text>
+</svg><p>인가·인증된 배포 환경과 데이터 상주, 암호화, 감사에 대한 엄격한 통제가 필요합니다. 나중에 "추가"할 수 없고, 기반 플랫폼과 호스팅이 <strong>이미 인가</strong>되어 있어야 합니다.</p></div>
+</div>
+<div class="callout warm"><span class="eyebrow">시험의 일관된 패턴</span>
+<p class="prose">시나리오가 다루는 규제 대상 데이터·분야를 식별한 뒤(건강 데이터 → HIPAA, EU 시민 개인정보 → GDPR, 미국 연방 기관 → FedRAMP), <strong>불필요한 데이터 노출을 줄이거나, 필요한 접근 통제·감사 추적을 더하거나, 알맞게 인가된 환경을 쓰는</strong> 선택지를 고릅니다. 면책 문구만 붙이거나 "모델은 정보만 줄 뿐"이라며 규제를 무시하는 선택지는 아닙니다.</p>
+</div>
+</section>
+<section>
+<h2><span class="no">5.5</span>윤리적 AI <span class="en">Ethical AI: bias, fairness, and transparency</span></h2>
+<div class="fig"><div class="fig-cap">도면 5 · 윤리적 AI의 세 축</div>
+<svg class="m" viewBox="0 0 234 162" style="max-width:304px" role="img" aria-label="윤리적 AI가 편향, 공정성, 투명성 세 축으로 갈라진다.">
+<rect class="n-o" x="6" y="62" width="76" height="38" rx="6"/>
+<text class="t" x="44" y="81" text-anchor="middle">윤리적 AI</text>
+<path class="e" d="M82 81 C99 81 99 29 112 29" marker-end="url(#ar)"/>
+<rect class="n-a" x="116" y="10" width="113" height="38" rx="6"/>
+<text class="t" x="172" y="21" text-anchor="middle">편향</text>
+<text class="ts" x="172" y="37" text-anchor="middle">슬라이스별 테스트</text>
+<path class="e" d="M82 81 C99 81 99 81 112 81" marker-end="url(#ar)"/>
+<rect class="n-a" x="116" y="62" width="113" height="38" rx="6"/>
+<text class="t" x="172" y="73" text-anchor="middle">공정성</text>
+<text class="ts" x="172" y="89" text-anchor="middle">기준을 명시</text>
+<path class="e" d="M82 81 C99 81 99 133 112 133" marker-end="url(#ar)"/>
+<rect class="n-a" x="116" y="114" width="113" height="38" rx="6"/>
+<text class="t" x="172" y="125" text-anchor="middle">투명성</text>
+<text class="ts" x="172" y="141" text-anchor="middle">공개 · 문서화</text>
+</svg>
+</div>
+<div class="pillars"><div class="pillar"><h4>편향 <span class="en">Bias</span></h4><span>전체 평균 정확도만 보지 말고 <strong>인구통계·사용 사례 슬라이스별</strong>로 출력을 적극 테스트합니다. 평균은 좋아 보여도 특정 하위 집단에서는 훨씬 나쁠 수 있습니다.</span><span class="ev">하위 집단별 검증</span></div><div class="pillar"><h4>공정성 <span class="en">Fairness</span></h4><span>이해관계자와 함께 사용 사례에서 공정한 대우가 무엇인지 정의합니다. 결과의 평등, 대우의 평등, 기회의 평등은 서로 충돌할 수 있으므로 <strong>명시적 기준</strong>을 고르고 암묵에 맡기지 않습니다.</span><span class="ev">명시적 기준 선택</span></div><div class="pillar"><h4>투명성 <span class="en">Transparency</span></h4><span>AI와 상호작용 중임, 사용하는 데이터, 알려진 한계를 사용자에게 알립니다. 채용, 대출, 의료, 법률처럼 영향이 큰 분야에서 특히 그렇습니다. 모델 선택, 가드레일, 알려진 실패 모드를 내부 문서로 남겨 사후에 <strong>감사 가능</strong>하게 합니다.</span><span class="ev">공개 + 내부 문서화</span></div></div>
+</section>
+<section>
+<h2>핵심 정리 <span class="en">Key takeaways: Domain 5</span></h2>
+<ul class="takeaways"><li><span>가드레일을 <strong>입력, 프롬프트, 도구 범위, 출력, 행동</strong>에 겹쳐 둡니다. 불필요한 기능의 제거가 탐지보다 낫고, 탐지가 아무것도 안 하는 것보다 낫습니다.</span></li><li><span>핵심 실패 모드를 이름으로 압니다: <strong>환각, 프롬프트 인젝션, 과도한 권한, 데이터 유출, 드리프트, 편향 증폭</strong>.</span></li><li><span>HITL을 <strong>리스크 등급</strong>에 맞추고, 체크포인트는 세션 시작이 아니라 되돌릴 수 없는 고영향 행동 지점에 둡니다.</span></li><li><span>규제를 데이터·분야에 맞춥니다(GDPR: EU 개인정보, HIPAA: 미국 건강 데이터, FedRAMP: 미국 연방 클라우드). 면책 문구가 아니라 <strong>구조적으로 알맞은 통제</strong>를 고릅니다.</span></li><li><span>하위 집단별 편향을 명시적으로 테스트하고, 공정성은 가정하지 말고 이해관계자와 정의하며, AI 사용·데이터·한계에 대한 투명성을 만듭니다.</span></li></ul>
+</section>
+
+<p class="source">원문: <a href="https://amitj.me/claude/course/ccarp/2/#page-d5">원문: CCA-F 코스 Domain 5</a> 페이지 내용만 한국어로 정리하고 도식화했습니다.</p>
+
+</div>
